@@ -302,5 +302,7 @@ html[data-theme="dark"] { --chart-grid: #263244; --chart-baseline: #495669; }
 :where(html[data-theme="dark"]) .image-viewer-bar a:focus-visible, :where(html[data-theme="dark"]) .image-viewer-bar button:focus-visible, :where(html[data-theme="dark"]) .image-viewer-nav:focus-visible { outline: 2px solid #1a2028; }
 :where(html[data-theme="dark"]) .cropper-frame { box-shadow: inset 0 0 0 2px rgba(19, 27, 40, .9); }
 :where(html[data-theme="dark"]) .cropper-view.circle .cropper-frame { box-shadow: 0 0 0 9999px rgba(15, 23, 42, .5), inset 0 0 0 2px rgba(19, 27, 40, .9); }
+:where(html[data-theme="dark"]) .glass-menu .gn-scope { --gn-edge-light: #1a2028; --gn-shadow: #d6dce9; }
+html[data-theme="dark"][data-theme="dark"] .glass-menu .gn-scope { --gn-shadow: #ebebeb; }
 html[data-theme="dark"] { --canvas: #0d141f; }
 :where(html[data-theme="dark"]) body { background: #0d141f; }

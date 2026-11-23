@@ -42,7 +42,8 @@ import NotebookPen from "lucide-react/icons/notebook-pen";
 import { useUpcomingAgenda } from "./use-agenda";
 import CalendarDays from "lucide-react/icons/calendar-days";
 import CommandSearch, { type QuickAction } from "./command-search";
-import SidebarNav, { OPEN_TASK_EVENT, useNavCounts } from "./sidebar-nav";
+import { OPEN_TASK_EVENT, useNavCounts } from "./sidebar-nav";
+import { PortalGlassNav } from "./portal-glass-nav";
 import { type SearchHit } from "./search";
 import ShieldCheck from "lucide-react/icons/shield-check";
 import { useJiraAutoSync } from "./use-jira-sync";
@@ -54,11 +55,8 @@ import Coffee from "lucide-react/icons/coffee";
 import FileDown from "lucide-react/icons/file-down";
 import History from "lucide-react/icons/history";
 import LogOut from "lucide-react/icons/log-out";
-import PanelLeftClose from "lucide-react/icons/panel-left-close";
-import PanelLeftOpen from "lucide-react/icons/panel-left-open";
+import LayoutDashboard from "lucide-react/icons/layout-dashboard";
 
-/** Escolha de cada pessoa: menu lateral fixo aberto ou só ícones. */
-const MENU_PINNED_KEY = "portal-menu-fixo";
 import Menu from "lucide-react/icons/menu";
 import PackageCheck from "lucide-react/icons/package-check";
 import PackageOpen from "lucide-react/icons/package-open";
@@ -126,6 +124,8 @@ export default function Home() {
     setTab(next);
     setStockMenu(keepStock);
     setMobileMenu(false);
+    // Tablet (sem mouse): fecha o menu depois de escolher a tela.
+    if (!window.matchMedia("(hover: hover)").matches) setMenuHover(false);
   }
   /** Abre a tela de um aviso; 1:1 e clima são abas de Avaliações e metas. */
   function openView(view: typeof tab | "one_on_ones" | "pulse" | "incidents" | "assets" | "absences" | "chat") {
@@ -147,44 +147,25 @@ export default function Home() {
     go(view);
   }
   const { counts: navCounts } = useNavCounts(Boolean(currentUser?.active));
-  // Menu lateral estilo Instagram: faixa só com ícones que se abre ao passar o mouse (ou com o teclado).
-  // Um pequeno atraso evita abrir sem querer quando o mouse só cruza a faixa.
-  const [sidebarHover, setSidebarHover] = useState(false);
-  const hoverTimer = useRef<number | null>(null);
-  const expandSidebar = useCallback(() => {
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-    hoverTimer.current = window.setTimeout(() => setSidebarHover(true), 140);
-  }, []);
-  const collapseSidebar = useCallback(() => {
-    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
-    hoverTimer.current = null;
-    setSidebarHover(false);
-  }, []);
-  // Menu fixo aberto (com os nomes) em telas largas. Cada pessoa escolhe; o padrão é fixo a partir de 1280px.
   // Sobe 1 depois de uma importação: a tela aberta recarrega os dados.
   const [dataVersion, setDataVersion] = useState(0);
-  const [menuPinned, setMenuPinned] = useState(false);
-  const [wideScreen, setWideScreen] = useState(false);
+  // Menu de vidro: faixa de ícones que abre com o mouse (ou o teclado) e volta quando o mouse sai.
+  // Um pequeno atraso evita abrir sem querer quando o mouse só cruza a faixa.
+  const [menuHover, setMenuHover] = useState(false);
+  const [mobileScreen, setMobileScreen] = useState(false);
+  const menuTimer = useRef<number | null>(null);
+  function setMenuSoon(open: boolean) {
+    if (menuTimer.current) window.clearTimeout(menuTimer.current);
+    menuTimer.current = window.setTimeout(() => setMenuHover(open), open ? 120 : 160);
+  }
   useEffect(() => {
-    const wide = window.matchMedia("(min-width: 1100px)");
-    const sync = () => setWideScreen(wide.matches);
-    wide.addEventListener("change", sync);
-    const first = window.setTimeout(() => {
-      sync();
-      let saved: string | null = null;
-      try { saved = window.localStorage.getItem(MENU_PINNED_KEY); } catch { /* navegador sem armazenamento */ }
-      setMenuPinned(saved === null ? window.innerWidth >= 1280 : saved === "1");
-    }, 0);
-    return () => { window.clearTimeout(first); wide.removeEventListener("change", sync); };
+    const phone = window.matchMedia("(max-width: 760px)");
+    const sync = () => setMobileScreen(phone.matches);
+    phone.addEventListener("change", sync);
+    const first = window.setTimeout(sync, 0);
+    return () => { window.clearTimeout(first); phone.removeEventListener("change", sync); if (menuTimer.current) window.clearTimeout(menuTimer.current); };
   }, []);
-  const toggleMenuPinned = useCallback(() => {
-    setMenuPinned((current) => {
-      try { window.localStorage.setItem(MENU_PINNED_KEY, current ? "0" : "1"); } catch { /* ok */ }
-      return !current;
-    });
-    setSidebarHover(false);
-  }, []);
-  const pinnedOpen = menuPinned && wideScreen;
+  const menuExpanded = mobileScreen || menuHover;
 
   // Atalhos da visão geral para abrir o formulário de nova demanda / novo chamado.
   const [newTaskRequest, setNewTaskRequest] = useState(0);
@@ -248,7 +229,6 @@ export default function Home() {
     return () => window.removeEventListener(OPEN_TASK_EVENT, onOpen);
   }, []);
   // No celular a gaveta aberta já mostra os nomes.
-  const sidebarOpen = sidebarHover || mobileMenu || pinnedOpen;
 
   const load = useCallback(async (silent = false) => {
     try {
@@ -389,14 +369,20 @@ export default function Home() {
   ];
 
   return (
-    <div className={`app-shell ${pinnedOpen ? "menu-pinned" : ""}`}>
-      <aside className={`sidebar ${mobileMenu ? "open" : ""} ${sidebarOpen ? "expanded" : ""}`}
-        onMouseEnter={pinnedOpen ? undefined : expandSidebar} onMouseLeave={pinnedOpen ? undefined : collapseSidebar}
-        onFocus={pinnedOpen ? undefined : expandSidebar} onBlur={pinnedOpen ? undefined : (event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) collapseSidebar(); }}>
-        <button type="button" className={`brand brand-home ${tab === "hub" ? "active" : ""} ${brand.name.length > 22 ? "long-name" : ""}`} onClick={() => go("hub")} aria-label={`${brand.name}: ir para a Visão geral`} title={`${brand.name} · Visão geral`} aria-current={tab === "hub" ? "page" : undefined}><span className={brand.logoUrl ? "brand-mark has-logo" : "brand-mark"}><BrandLogo fallback={<Users size={21} />} /></span><div><strong>{brand.name}</strong>{brand.tagline && <small>{brand.tagline}</small>}</div></button>
-        <button className="close-menu" onClick={() => setMobileMenu(false)} aria-label="Fechar menu"><X /></button>
-        <SidebarNav activeKey={tab} expanded={sidebarOpen} sections={[
+    <div className="app-shell">
+      <aside className={`sidebar glass-menu ${mobileMenu ? "open" : ""} ${menuExpanded ? "expanded" : ""}`}
+        onMouseEnter={mobileScreen ? undefined : () => setMenuSoon(true)}
+        onMouseLeave={mobileScreen ? undefined : (event) => { setMenuSoon(false); const focused = document.activeElement; if (focused instanceof HTMLElement && event.currentTarget.contains(focused)) focused.blur(); }}
+        onFocus={mobileScreen ? undefined : (event) => { if (event.target.matches(":focus-visible")) setMenuSoon(true); }}
+        onBlur={mobileScreen ? undefined : (event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null) && !event.currentTarget.matches(":hover")) setMenuSoon(false); }}>
+        <PortalGlassNav activeKey={tab} expanded={menuExpanded} onExpandedChange={() => { if (mobileScreen) setMobileMenu(false); else setMenuHover((open) => !open); }}
+          brand={brand.name} brandDetail={brand.tagline || undefined} brandIcon={<BrandLogo fallback={<Users />} />}
+          account={{ name: currentUser?.name || "Equipe", detail: currentUser ? `${roleLabel(currentUser.role)} · Meu perfil` : "Carregando acesso", avatar: currentUser ? <MemberVisual member={currentUser} /> : "EQ" }}
+          onAccount={() => { if (currentUser) setModal({ kind: "profile" }); setMobileMenu(false); }}
+          accountAction={<button type="button" onClick={logout} title="Sair do sistema" aria-label="Sair do sistema"><LogOut /></button>}
+          sections={[
           { items: [
+            { key: "hub", label: "Visão geral", icon: <LayoutDashboard />, onClick: () => go("hub") },
             { key: "agenda", label: "Minha agenda", icon: <NotebookPen />, onClick: () => openAgenda() },
             { key: "calendar", label: "Calendário", icon: <CalendarDays />, onClick: () => go("calendar") },
             { key: "community", label: "Chat", icon: <MessagesSquare />, onClick: () => go("community"), badge: navCounts?.chat ? { count: navCounts.chat, tone: navCounts.chatDirect ? "danger" : "info", title: `${navCounts.chat} ${navCounts.chat === 1 ? "mensagem não lida" : "mensagens não lidas"}${navCounts.chatDirect ? ` (${navCounts.chatDirect} em conversa direta)` : ""}` } : null },
@@ -417,7 +403,7 @@ export default function Home() {
             { key: "maintenance", label: "Manutenção", icon: <Wrench />, onClick: () => go("maintenance") },
           ] },
           { label: "Copa", items: [
-            { key: "stock-module", label: "Estoque", icon: <PackageCheck />, open: stockMenu && sidebarOpen, onClick: () => setStockMenu((open) => !open), children: [
+            { key: "stock-module", label: "Estoque", icon: <PackageCheck />, open: stockMenu, onClick: () => setStockMenu((open) => !open), children: [
               { key: "stock", label: "Itens e saldos", icon: null, onClick: () => go("stock", true) },
               { key: "requests", label: "Pedidos da equipe", icon: null, onClick: () => go("requests", true) },
               ...(permissions.viewPlanning ? [{ key: "planning", label: "Planejamento", icon: null, onClick: () => go("planning", true) }] : []),
@@ -429,13 +415,6 @@ export default function Home() {
             { key: "admin", label: "Marca e segurança", icon: <ShieldCheck />, onClick: () => go("admin") },
           ] : [] },
         ]} />
-        <div className="sidebar-user">
-          <button className="sidebar-footer" onClick={() => currentUser && setModal({ kind: "profile" })} aria-label="Editar meu perfil" title="Meu perfil">{currentUser ? <MemberVisual member={currentUser} /> : <span className="avatar">EQ</span>}<div><strong>{currentUser?.name || "Equipe"}</strong><small>{currentUser ? `${roleLabel(currentUser.role)} · Meu perfil` : "Carregando acesso"}</small></div></button>
-          <button className="signout-link" onClick={logout} title="Sair do sistema" aria-label="Sair do sistema"><LogOut size={16} /></button>
-        </div>
-        {wideScreen && <button className="menu-pin-toggle" onClick={toggleMenuPinned} title={pinnedOpen ? "Recolher o menu (só ícones)" : "Fixar o menu aberto, com os nomes"} aria-pressed={pinnedOpen}>
-          {pinnedOpen ? <PanelLeftClose size={17} /> : <PanelLeftOpen size={17} />}<span>{pinnedOpen ? "Recolher menu" : "Fixar menu"}</span>
-        </button>}
       </aside>
 
       <main>
