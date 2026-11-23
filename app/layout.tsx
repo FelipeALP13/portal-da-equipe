@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import "@fontsource-variable/inter/wght.css";
+import "@fontsource-variable/space-grotesk/wght.css";
 import "./globals.css";
 import "./dark-theme.css";
 import { APP_DESCRIPTION } from "./brand";

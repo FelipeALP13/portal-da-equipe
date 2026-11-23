@@ -77,6 +77,7 @@ import { ShoppingTrip } from "./shopping-trip";
 import { CopaRequestsView } from "./copa-requests-view";
 import { TeamView } from "./team-view";
 import { Modal } from "./dashboard-modal";
+import { BrandStroke } from "./brand-stroke";
 
 export default function Home() {
   const router = useRouter();
@@ -430,6 +431,7 @@ export default function Home() {
           {tab === "hub" ? <HubView onOpenReviews={() => go("reviews")} onOpenPulse={() => openView("pulse")} items={items} movements={movements} schedule={schedule} currentUser={currentUser} counts={navCounts} agenda={upcomingAgenda} onOpenAgenda={openAgenda} onMyDay={() => setMyDayOpen(true)} onOpen={(destination) => go(destination)} onOpenTask={openTask} onOpenTicket={openTicket} onNewTask={() => { openTask(); setNewTaskRequest((value) => value + 1); }} onNewTicket={() => { openTicket(); setNewTicketRequest((value) => value + 1); }} onSearch={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))} /> : tab === "stock" ? (
             <>
               <section className="overview-hero">
+                <BrandStroke />
                 <div className="hero-copy">
                   <p className="hero-date">{todayLabel}</p>
                   <h2>{lowItems.length ? `${lowItems.length} ${lowItems.length === 1 ? "item precisa" : "itens precisam"} de atenção` : "Tudo em ordem por aqui"}</h2>

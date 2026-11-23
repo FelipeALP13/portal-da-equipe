@@ -28,8 +28,14 @@ import Plus from "lucide-react/icons/plus";
 import Sun from "lucide-react/icons/sun";
 import Sprout from "lucide-react/icons/sprout";
 import ClipboardCheck from "lucide-react/icons/clipboard-check";
+import { BrandStroke, WeekStroke } from "./brand-stroke";
 import Smile from "lucide-react/icons/smile";
 import { type CurrentUser, type Item, type Movement, type Schedule, movementCopy, fmt, toForecast, exactDate, ItemVisual, todayLong, isoDateInSaoPaulo, weekLabel, findTeam } from "./dashboard-shared";
+
+function greeting() {
+  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: "America/Sao_Paulo" }).format(new Date()));
+  return hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+}
 
 export function HubView({ onOpenReviews, onOpenPulse, items, movements, schedule, currentUser, counts, agenda, onOpenAgenda, onMyDay, onOpen, onOpenTask, onOpenTicket, onNewTask, onNewTicket }: { onOpenReviews: () => void; onOpenPulse: () => void; items: Item[]; movements: Movement[]; schedule: Schedule; currentUser: CurrentUser | null; counts: NavCounts | null; agenda: AgendaEvent[]; onOpenAgenda: (eventId?: number) => void; onMyDay: () => void; onOpen: (destination: "stock" | "schedule" | "people" | "calendar") => void; onOpenTask: (taskId?: number) => void; onOpenTicket: (ticketId?: number) => void; onNewTask: () => void; onNewTicket: () => void; onSearch?: () => void }) {
   const today = isoDateInSaoPaulo();
@@ -53,12 +59,21 @@ export function HubView({ onOpenReviews, onOpenPulse, items, movements, schedule
     { key: "stock", icon: <Archive />, label: "Copa: para comprar", value: lowItems.length, detail: lowItems.length ? lowItems.slice(0, 2).map((item) => item.name).join(", ") : "estoque em dia", alert: false, warn: lowItems.length > 0, action: () => onOpen("stock") },
   ];
 
+  const firstName = currentUser?.name.trim().split(/\s+/)[0] ?? "";
+  const lateTickets = counts?.ticketsLate ?? 0;
+  const lateTasks = counts?.tasksOverdue ?? 0;
+  const pulse = !counts ? "" : lateTickets || lateTasks
+    ? [lateTickets ? `${lateTickets} ${lateTickets === 1 ? "chamado" : "chamados"} fora do prazo` : "", lateTasks ? `${lateTasks} ${lateTasks === 1 ? "demanda vencida" : "demandas vencidas"}` : ""].filter(Boolean).join(" e ")
+    : "nada fora do prazo";
+
   return <div className="hub">
-    <section className="hub-hero">
-      <div>
-        
-        <h2 className="hub-hero-date">{todayLong()}</h2>
+    <section className="hub-hero brand-band">
+      <BrandStroke />
+      <div className="brand-band-copy">
+        <h2 suppressHydrationWarning>{greeting()}{firstName ? `, ${firstName}` : ""}</h2>
+        <p suppressHydrationWarning>{todayLong()}{pulse ? ` · ${pulse}` : ""}</p>
       </div>
+      <WeekStroke today={today} />
       <div className="hub-actions">
         {canEdit && <button className="primary-button" onClick={onNewTask}><Plus size={16} /> Nova demanda</button>}
         {canEdit && <button className="secondary-button" onClick={onNewTicket}><LifeBuoy size={16} /> Abrir chamado</button>}

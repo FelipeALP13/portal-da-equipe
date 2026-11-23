@@ -9,6 +9,7 @@ import UsersRound from "lucide-react/icons/users-round";
 import Check from "lucide-react/icons/check";
 import { useRouter } from "next/navigation";
 import { BrandLogo, useBrand } from "./brand-context";
+import { BrandStroke } from "./brand-stroke";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -73,7 +74,7 @@ export default function LoginScreen() {
   return (
     <main className="login-page">
       <section className="login-layout">
-        <div className="login-welcome">
+        <div className="login-welcome"><BrandStroke />
           <div className="login-brand"><span className={brand.logoUrl ? "has-logo" : undefined}><BrandLogo fallback={<UsersRound />} /></span><div><strong>{brand.name}</strong>{brand.tagline && <small>{brand.tagline}</small>}</div></div>
           
           <h1>{setupRequired ? "Vamos criar o primeiro acesso" : "Tudo da equipe em um só lugar"}</h1>
