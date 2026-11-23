@@ -18,6 +18,7 @@ import ClipboardCheck from "lucide-react/icons/clipboard-check";
 import Building2 from "lucide-react/icons/building-2";
 import CalendarRange from "lucide-react/icons/calendar-range";
 import { BrandLogo, useBrand } from "./brand-context";
+import { DataToolsButton } from "./data-tools";
 import UserCog from "lucide-react/icons/user-cog";
 import PeopleView from "./people-view";
 import ProjectsView from "./projects-view";
@@ -160,6 +161,8 @@ export default function Home() {
     setSidebarHover(false);
   }, []);
   // Menu fixo aberto (com os nomes) em telas largas. Cada pessoa escolhe; o padrão é fixo a partir de 1280px.
+  // Sobe 1 depois de uma importação: a tela aberta recarrega os dados.
+  const [dataVersion, setDataVersion] = useState(0);
   const [menuPinned, setMenuPinned] = useState(false);
   const [wideScreen, setWideScreen] = useState(false);
   useEffect(() => {
@@ -439,10 +442,10 @@ export default function Home() {
         <header className="topbar">
           <button className="menu-button" onClick={() => setMobileMenu(true)} aria-label="Abrir menu"><Menu /></button>
           <div><h1>{tab === "hub" ? "Visão geral" : tab === "stock" ? "Estoque" : tab === "schedule" ? "Escala de atendimento" : tab === "tasks" ? "Demandas" : tab === "projects" ? "Projetos grandes" : tab === "panel" ? "Painel da liderança" :tab === "tickets" ? "Chamados internos" : tab === "knowledge" ? "Base de conhecimento" : tab === "admin" ? "Marca, histórico e cópia de segurança" : tab === "calendar" ? "Calendário" : tab === "agenda" ? "Minha agenda" : tab === "clients" ? "Clientes e sistemas" : tab === "reviews" ? "Avaliações e metas" : tab === "community" ? "Chat da equipe" : tab === "sprints" ? "Sprints e retrospectivas" :tab === "people" ? "Pessoas e times" :tab === "planning" ? "Planejamento do estoque" : tab === "requests" ? "Pedidos da Copa" : tab === "maintenance" ? "Manutenção do escritório" : tab === "reports" ? "Relatórios" : tab === "team" ? "Usuários e permissões" : "Histórico do estoque"}</h1></div>
-          <div className="topbar-actions">{currentUser?.active && currentUser.role !== "viewer" && <TimerBadge onOpenTask={openTask} />}<CommandSearch onPick={openSearchHit} actions={quickActions} />{currentUser?.active && tab !== "community" && <ChatPanelButton unread={navCounts?.chat ?? 0} direct={navCounts?.chatDirect ?? 0} active={chatPanel} onClick={() => setChatPanel((value) => !value)} />}<NotificationsBell onOpenTask={openTask} onOpenTicket={openTicket} onOpenEvent={openAgenda} onOpenView={(view) => openView(view)} />{tab === "stock" && (isAdmin || permissions.manageItems) ? <button className="primary-button" onClick={() => setModal({ kind: "item" })}><Plus size={18} /> Novo item</button> : tab === "team" && isAdmin ? <button className="primary-button" onClick={() => setModal({ kind: "member" })}><UserPlus size={18} /> Adicionar membro</button> : <span className="role-chip">{currentUser ? roleLabel(currentUser.role) : "Carregando"}</span>}</div>
+          <div className="topbar-actions"><DataToolsButton screen={tab} onImported={() => { void load(true); setDataVersion((value) => value + 1); }} />{currentUser?.active && currentUser.role !== "viewer" && <TimerBadge onOpenTask={openTask} />}<CommandSearch onPick={openSearchHit} actions={quickActions} />{currentUser?.active && tab !== "community" && <ChatPanelButton unread={navCounts?.chat ?? 0} direct={navCounts?.chatDirect ?? 0} active={chatPanel} onClick={() => setChatPanel((value) => !value)} />}<NotificationsBell onOpenTask={openTask} onOpenTicket={openTicket} onOpenEvent={openAgenda} onOpenView={(view) => openView(view)} />{tab === "stock" && (isAdmin || permissions.manageItems) ? <button className="primary-button" onClick={() => setModal({ kind: "item" })}><Plus size={18} /> Novo item</button> : tab === "team" && isAdmin ? <button className="primary-button" onClick={() => setModal({ kind: "member" })}><UserPlus size={18} /> Adicionar membro</button> : <span className="role-chip">{currentUser ? roleLabel(currentUser.role) : "Carregando"}</span>}</div>
         </header>
 
-        <section className={`content ${tab === "community" ? "content-full" : ""}`}>
+        <section key={dataVersion} className={`content ${tab === "community" ? "content-full" : ""}`}>
           {error && <div className="alert error"><TriangleAlert size={18} /><span>{error}</span><button onClick={() => setError("")} aria-label="Fechar aviso"><X size={16} /></button></div>}
           {notice && <div className="toast"><PackageCheck size={18} />{notice}</div>}
 
