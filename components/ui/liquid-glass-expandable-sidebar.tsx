@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode, type RefObject } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties, type MouseEvent, type ReactNode, type RefObject } from "react";
 import { ArrowLeftToLine, ArrowRightFromLine, ChevronDown, ChevronRight, PanelsTopLeft, Search, X } from "lucide-react";
 import { gsap } from "gsap";
 import { Flip } from "gsap/Flip";
@@ -580,13 +580,25 @@ type ExpandableGlassSidebarProps = NavigationGlassProps & {
   onNavigate?: (item: GlassNavItem, event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
+/** Com mouse os submódulos abrem ao lado; em toque e na gaveta do celular abrem na própria lista. */
+const HOVER_QUERY = "(hover: hover) and (pointer: fine) and (min-width: 761px)";
+const subscribeHover = (notify: () => void) => {
+  const media = window.matchMedia(HOVER_QUERY);
+  media.addEventListener("change", notify);
+  return () => media.removeEventListener("change", notify);
+};
+
 function LiquidGlassExpandableSidebar({
   groups, activeId, brand = "Workspace", brandDetail, brandIcon, account, accountAction, expanded: controlled,
   defaultExpanded = true, onExpandedChange, onNavigate, motion = true, selectionLight = 1, effects, ...material
 }: ExpandableGlassSidebarProps) {
   const [localExpanded, setLocalExpanded] = useState(defaultExpanded);
   const [search, setSearch] = useState("");
-  const [closedGroups, setClosedGroups] = useState<Set< string>>(() => new Set());
+  const [openGroups, setOpenGroups] = useState<Set< string>>(() => new Set());
+  const [flyout, setFlyout] = useState<{ id: string; top: number } | null>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
+  const flyoutTimer = useRef<number | null>(null);
+  const canHover = useSyncExternalStore(subscribeHover, () => window.matchMedia(HOVER_QUERY).matches, () => false);
   const expanded = controlled ?? localExpanded;
   const query = expanded ? foldLabel(search.trim()) : "";
   const root = useRef<HTMLElement>(null);
@@ -617,7 +629,7 @@ function LiquidGlassExpandableSidebar({
     input.current?.focus();
   };
   const toggleGroup = (id: string) => {
-    setClosedGroups(current => {
+    setOpenGroups(current => {
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -628,20 +640,57 @@ function LiquidGlassExpandableSidebar({
     if (isPlainNavigation(event)) onNavigate?.(item, event);
   };
 
-  /** Item com submódulos: abre a lista e vai para a tela; clicar de novo na tela atual fecha a lista. */
-  const activateParent = (item: GlassSidebarItem, open: boolean, inBranch: boolean, event: MouseEvent<HTMLAnchorElement>) => {
-    if (!expanded || query || !item.children?.length || !isPlainNavigation(event)) {
+  const keepFlyout = () => {
+    if (flyoutTimer.current !== null) window.clearTimeout(flyoutTimer.current);
+    flyoutTimer.current = null;
+  };
+  const closeFlyoutSoon = () => {
+    keepFlyout();
+    flyoutTimer.current = window.setTimeout(() => setFlyout(null), 140);
+  };
+  const openFlyout = (item: GlassSidebarItem, row: Element) => {
+    keepFlyout();
+    const nav = root.current;
+    if (!nav || !item.children?.length) return;
+    const navBox = nav.getBoundingClientRect();
+    const estimated = 52 + item.children.length * 38;
+    setFlyout({ id: item.id, top: Math.max(8, Math.min(row.getBoundingClientRect().top - navBox.top - 6, navBox.height - estimated - 8)) });
+  };
+  /** Clicar no módulo abre a tela dele; em toque, abre e fecha a lista de submódulos. */
+  const activateParent = (item: GlassSidebarItem, event: MouseEvent<HTMLAnchorElement>) => {
+    if (canHover || !expanded || query || !item.children?.length || !isPlainNavigation(event)) {
+      setFlyout(null);
       navigate(item, event);
       return;
     }
-    if (!open || inBranch) toggleGroup(item.id);
-    if (inBranch) event.preventDefault();
-    else navigate(item, event);
+    event.preventDefault();
+    toggleGroup(item.id);
   };
+
+  // A rolagem do menu fica no menu: ao chegar no fim ela não passa para a tela principal.
+  useEffect(() => {
+    const nav = root.current;
+    const list = body.current;
+    if (!nav || !list) return;
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey) return;
+      const max = list.scrollHeight - list.clientHeight;
+      if (!list.contains(event.target as Node) || max <= 1 || (event.deltaY < 0 && list.scrollTop <= 0) || (event.deltaY > 0 && list.scrollTop >= max - 1)) event.preventDefault();
+    };
+    const onScroll = () => setFlyout(null);
+    nav.addEventListener("wheel", onWheel, { passive: false });
+    list.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      nav.removeEventListener("wheel", onWheel);
+      list.removeEventListener("scroll", onScroll);
+      if (flyoutTimer.current !== null) window.clearTimeout(flyoutTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (expanded) return;
     setSearch("");
+    setFlyout(null);
     if (searchBox.current?.contains(document.activeElement) || body.current?.contains(document.activeElement) &&
       (document.activeElement instanceof HTMLButtonElement || document.activeElement?.closest(".gn-sidebar-children"))) {
       toggleButton.current?.focus();
@@ -698,9 +747,10 @@ function LiquidGlassExpandableSidebar({
       list.removeEventListener("scroll", updateScrollEdges);
       tween?.kill();
     };
-  }, { scope: root, dependencies: [activeId, query, expanded, closedGroups, groups, reduced, speed], revertOnUpdate: true });
+  }, { scope: root, dependencies: [activeId, query, expanded, openGroups, groups, reduced, speed], revertOnUpdate: true });
 
   const currentAccount = account?.id !== undefined && account.id === activeId;
+  const activeFlyout = flyout ? groups.flatMap(group => group.items).find(item => item.id === flyout.id && item.children?.length) : undefined;
   return (
     <NavigationGlass {...material} motion={motion}>
       <nav className="gn-sidebar" ref={root} data-expanded={expanded}
@@ -735,30 +785,40 @@ function LiquidGlassExpandableSidebar({
                 {group.items.map(item => {
                   const children = foldLabel(item.label).includes(query) ? item.children :
                     item.children?.filter(child => foldLabel(child.label).includes(query));
-                  const open = !!query || !closedGroups.has(item.id);
+                  const open = !!query || (expanded && !canHover && openGroups.has(item.id));
+                  const flyoutOpen = canHover && flyout?.id === item.id;
                   const childIsCurrent = item.children?.some(child => child.id === activeId);
                   const current = item.id === activeId;
                   const currentBranch = childIsCurrent && !open;
                   const panelId = `${bodyId}-${encodeURIComponent(item.id)}`;
                   return (
-                    <li key={item.id}>
+                    <li key={item.id}
+                      onMouseEnter={event => { if (canHover && !query && item.children?.length) openFlyout(item, event.currentTarget); else closeFlyoutSoon(); }}
+                      onMouseLeave={closeFlyoutSoon}>
                       <div className="gn-sidebar-row">
                         <a href={item.href} title={expanded ? undefined : item.label} data-selected={current || !!currentBranch}
                           aria-label={item.badge ? `${item.label}, ${item.badge}` : item.label}
                           aria-current={current ? "page" : currentBranch ? "location" : undefined}
-                          onClick={event => activateParent(item, open, current || !!childIsCurrent, event)}>
+                          onClick={event => activateParent(item, event)}>
                           <span className="gn-sidebar-icon" aria-hidden="true">{item.icon}</span>
                           <span className="gn-sidebar-label" aria-hidden="true">{item.label}</span>
                           {item.count ? <span className="gn-sidebar-count" data-tone={item.countTone ?? "info"} aria-hidden="true">{item.count > 99 ? "99+" : item.count}</span> : expanded && item.badge && <span className="gn-sidebar-badge" aria-hidden="true" />}
                         </a>
                         {expanded && !!children?.length && !query && (
                           <button type="button" className="gn-sidebar-disclosure" aria-label={`Subpáginas de ${item.label}`}
-                            aria-expanded={open} aria-controls={panelId} onClick={() => toggleGroup(item.id)}>
+                            data-flyout={canHover || undefined} aria-expanded={canHover ? flyoutOpen : open} aria-controls={panelId}
+                            onClick={event => {
+                              if (!canHover) { toggleGroup(item.id); return; }
+                              if (flyoutOpen) { setFlyout(null); return; }
+                              const row = event.currentTarget.closest("li");
+                              if (row) openFlyout(item, row);
+                              requestAnimationFrame(() => flyoutRef.current?.querySelector("a")?.focus());
+                            }}>
                             <ChevronDown aria-hidden="true" />
                           </button>
                         )}
                       </div>
-                      {!!children?.length && (
+                      {!!children?.length && (!canHover || !!query) && (
                         <ul className="gn-sidebar-children" id={panelId} hidden={!open}>
                           {children.map(child => (
                             <li key={child.id}>
@@ -782,6 +842,27 @@ function LiquidGlassExpandableSidebar({
             {hasResults && query && "Telas encontradas."}
           </p>
         </div>
+        {expanded && activeFlyout?.children && flyout && (
+          <div className="gn-sidebar-flyout" ref={flyoutRef} id={`${bodyId}-${encodeURIComponent(activeFlyout.id)}`} role="group" aria-label={`Submódulos de ${activeFlyout.label}`}
+            style={{ top: flyout.top }} onMouseEnter={keepFlyout} onMouseLeave={closeFlyoutSoon}
+            onKeyDown={event => {
+              if (event.key !== "Escape") return;
+              event.stopPropagation();
+              const controls = `${bodyId}-${encodeURIComponent(activeFlyout.id)}`;
+              setFlyout(null);
+              root.current?.querySelector<HTMLElement>(`[aria-controls="${CSS.escape(controls)}"]`)?.focus();
+            }}>
+            <strong>{activeFlyout.label}</strong>
+            <ul>
+              {activeFlyout.children.map(child => (
+                <li key={child.id}>
+                  <a href={child.href} aria-current={child.id === activeId ? "page" : undefined} data-selected={child.id === activeId}
+                    onClick={event => { setFlyout(null); navigate(child, event); }}>{child.label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {account && (
           <div className="gn-sidebar-account-row">
           <a className="gn-sidebar-account" href={account.href} aria-label={expanded ? undefined : account.name}
