@@ -427,17 +427,27 @@ export function ChannelMark({ size = 18 }: { size?: number }) {
 /** Uma conversa (canal ou pessoa): cabeçalho, mensagens e o campo para escrever. */
 type PinnedMessage = { id: number; authorName: string; text: string; pinnedAt: string; pinnedByName: string | null };
 
+/** Últimas conversas abertas: reabrir mostra na hora enquanto a versão atual chega do servidor. */
+type ThreadSnapshot = { messages: Message[]; hasMore: boolean; channel: ChannelInfo; pinned: PinnedMessage[]; scheduled: Scheduled[]; peerReadId: number | null };
+const threadCache = new Map<string, ThreadSnapshot>();
+const CACHE_TOPICS = 12;
+const CACHE_MESSAGES = 60;
+/** A cada 3 s vêm só as novidades; a cada 5 ciclos vem tudo (edições, reações, enquetes e fixadas). */
+const FULL_EVERY = 5;
+
 export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpenFull, actions, focus }: { topicId: number; people: Person[]; me: Me; compact?: boolean; onChanged?: () => void; onBack?: () => void; onOpenFull?: () => void; actions?: (channel: ChannelInfo) => React.ReactNode; focus?: { id: number; key: number } | null }) {
-  const [pinned, setPinned] = useState<PinnedMessage[]>([]);
+  const cacheKey = `${me.id}:${topicId}`;
+  const [cached] = useState(() => threadCache.get(cacheKey));
+  const [pinned, setPinned] = useState<PinnedMessage[]>(cached?.pinned ?? []);
   const [showPins, setShowPins] = useState(false);
   const [flash, setFlash] = useState<number | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [channel, setChannel] = useState<ChannelInfo | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [messages, setMessages] = useState<Message[]>(cached?.messages ?? []);
+  const [channel, setChannel] = useState<ChannelInfo | null>(cached?.channel ?? null);
+  const [hasMore, setHasMore] = useState(cached?.hasMore ?? false);
+  const [loaded, setLoaded] = useState(Boolean(cached));
   const [newSince, setNewSince] = useState<number | null>(null);
   // Conversa direta: até onde a outra pessoa leu ("Vista" embaixo da sua última mensagem).
-  const [peerReadId, setPeerReadId] = useState<number | null>(null);
+  const [peerReadId, setPeerReadId] = useState<number | null>(cached?.peerReadId ?? null);
   // Rolou para cima: id da última mensagem que estava na tela (as de depois contam como novas no botão).
   const [awayFrom, setAwayFrom] = useState<number | null>(null);
   const [typing, setTyping] = useState<string[]>([]);
@@ -447,7 +457,7 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
   const [reactingTo, setReactingTo] = useState<number | null>(null);
   const [reminding, setReminding] = useState<{ id: number; presets: { label: string; at: string }[] } | null>(null);
   const [makingTask, setMakingTask] = useState<Message | null>(null);
-  const [scheduled, setScheduled] = useState<Scheduled[]>([]);
+  const [scheduled, setScheduled] = useState<Scheduled[]>(cached?.scheduled ?? []);
   const [showScheduled, setShowScheduled] = useState(false);
   const [pollModal, setPollModal] = useState(false);
   const [error, setError] = useState("");
@@ -458,7 +468,11 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
   const stickToBottom = useRef(true);
   const keepOffset = useRef<number | null>(null);
   const lastSeen = useRef(0);
-  const messagesRef = useRef<Message[]>([]);
+  const messagesRef = useRef<Message[]>(cached?.messages ?? []);
+  const synced = useRef(false);
+  const wantFull = useRef(false);
+  const running = useRef<Promise<void> | null>(null);
+  const onChangedRef = useRef(onChanged);
   const myName = people.find((person) => person.id === me.id)?.name ?? "";
 
   const merge = useCallback((incoming: Message[]) => {
@@ -469,32 +483,67 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
     });
   }, []);
 
-  const load = useCallback(async () => {
+  useEffect(() => { onChangedRef.current = onChanged; }, [onChanged]);
+
+  const pull = useCallback(async (full: boolean) => {
     try {
-      const response = await fetch(`/api/chat?topic=${topicId}`, { cache: "no-store" });
-      const json = await response.json() as { messages: Message[]; hasMore: boolean; lastReadId: number; peerReadId?: number | null; typing: string[]; channel: ChannelInfo; pinned?: PinnedMessage[]; scheduled?: Scheduled[]; error?: string };
-      if (!response.ok) throw new Error(json.error || "Não foi possível carregar as mensagens.");
+      const first = !synced.current;
+      const after = full || first ? null : messagesRef.current[messagesRef.current.length - 1]?.id ?? 0;
+      const response = await fetch(`/api/chat?topic=${topicId}${after === null ? "" : `&after=${after}`}`, { cache: "no-store" });
+      const json = await response.json() as { messages: Message[]; hasMore: boolean; lastReadId: number; peerReadId?: number | null; typing: string[]; channel?: ChannelInfo; pinned?: PinnedMessage[]; scheduled?: Scheduled[]; error?: string };
+      if (!response.ok) { threadCache.delete(cacheKey); throw new Error(json.error || "Não foi possível carregar as mensagens."); }
       const box = listRef.current;
       stickToBottom.current = !box || box.scrollHeight - box.scrollTop - box.clientHeight < 160;
-      merge(json.messages);
-      setChannel(json.channel);
-      setTyping(json.typing ?? []);
-      setPinned(json.pinned ?? []);
-      setScheduled(json.scheduled ?? []);
+      // A primeira resposta substitui a cópia guardada, que pode estar longe das mensagens atuais.
+      if (first) setMessages(json.messages);
+      else if (json.messages.length) merge(json.messages);
+      const names = json.typing ?? [];
+      setTyping((current) => (current.join("|") === names.join("|") ? current : names));
       setPeerReadId(json.peerReadId ?? null);
-      if (!loaded) { setHasMore(json.hasMore); setNewSince(json.lastReadId || null); setLoaded(true); }
+      if (after === null) {
+        if (json.channel) setChannel(json.channel);
+        setPinned(json.pinned ?? []);
+        setScheduled(json.scheduled ?? []);
+      }
+      if (first) { synced.current = true; setHasMore(json.hasMore); setNewSince(json.lastReadId || null); setLoaded(true); }
       const newest = json.messages[json.messages.length - 1]?.id ?? 0;
-      if (newest > lastSeen.current) { lastSeen.current = newest; window.dispatchEvent(new Event(CHAT_CHANGED)); onChanged?.(); }
+      if (newest > lastSeen.current) { lastSeen.current = newest; window.dispatchEvent(new Event(CHAT_CHANGED)); onChangedRef.current?.(); }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível carregar as mensagens.");
     }
-  }, [topicId, merge, loaded, onChanged]);
+  }, [topicId, cacheKey, merge]);
+
+  // Uma chamada por vez: se pedirem a versão completa no meio de outra, ela roda logo em seguida.
+  const sync = useCallback((full: boolean) => {
+    if (full) wantFull.current = true;
+    running.current ??= (async () => {
+      do {
+        const next = wantFull.current;
+        wantFull.current = false;
+        await pull(next);
+      } while (wantFull.current);
+    })().finally(() => { running.current = null; });
+    return running.current;
+  }, [pull]);
+  const load = useCallback(() => sync(true), [sync]);
 
   useEffect(() => {
+    let tick = 0;
     const first = window.setTimeout(() => { void load(); }, 0);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 3000);
+    const interval = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      tick = (tick + 1) % FULL_EVERY;
+      void sync(tick === 0);
+    }, 3000);
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
-  }, [load]);
+  }, [load, sync]);
+
+  useEffect(() => {
+    if (!loaded || !channel) return;
+    threadCache.delete(cacheKey);
+    threadCache.set(cacheKey, { messages: messages.slice(-CACHE_MESSAGES), hasMore: hasMore || messages.length > CACHE_MESSAGES, channel, pinned, scheduled, peerReadId });
+    if (threadCache.size > CACHE_TOPICS) threadCache.delete(threadCache.keys().next().value as string);
+  }, [cacheKey, loaded, channel, messages, hasMore, pinned, scheduled, peerReadId]);
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
 

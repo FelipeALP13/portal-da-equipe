@@ -33,6 +33,8 @@ const canSee = (channel: Channel, memberId: number) => channel.kind === "channel
 
 const PAGE = 60;
 const MAX_PINS = 25;
+/** Intervalo mínimo entre gravações de "visto agora" (bem menor que o tempo para sair de online). */
+const PRESENCE_WRITE_MS = 45_000;
 /** Mesma mensagem repetida dentro deste tempo conta como clique duplo, não como mensagem nova. */
 const DUPLICATE_WINDOW_MS = 8000;
 /** Mensagens diretas seguidas, ainda não vistas, dentro deste tempo viram um aviso só no sino. */
@@ -46,7 +48,11 @@ const plainText = (value: string) => value.replace(/\|\|[^|]*\|\|/g, "(spoiler)"
 
 /** Marca a pessoa como vista agora (online nas conversas). */
 async function touchPresence(db: Db, memberId: number, now = new Date().toISOString()) {
-  await db.insert(chatPresence).values({ memberId, lastSeenAt: now }).onConflictDoUpdate({ target: chatPresence.memberId, set: { lastSeenAt: now } }).catch(() => undefined);
+  // Só regrava de tempos em tempos: a atualização do chat roda a cada poucos segundos e gravação tem limite diário.
+  const stale = new Date(Date.parse(now) - PRESENCE_WRITE_MS).toISOString();
+  await db.insert(chatPresence).values({ memberId, lastSeenAt: now })
+    .onConflictDoUpdate({ target: chatPresence.memberId, set: { lastSeenAt: now }, setWhere: sql`coalesce(${chatPresence.lastSeenAt}, '') < ${stale}` })
+    .catch(() => undefined);
 }
 
 const parseAttachments = (value: string): ChatAttachment[] => { try { return parseChatAttachments(JSON.parse(value)); } catch { return []; } };
@@ -60,9 +66,11 @@ const previewText = (row: { body: string; attachments: string }) => {
   return files.some((file) => file.kind === "gif" || file.key.endsWith(".gif")) ? "GIF" : files.length ? "Imagem" : "";
 };
 
-async function messagesOf(db: Db, topicId: number, meId: number, before: number | null, isAdmin = false) {
-  const rows = await db.select().from(chatMessages).where(before ? and(eq(chatMessages.topicId, topicId), lt(chatMessages.id, before)) : eq(chatMessages.topicId, topicId)).orderBy(desc(chatMessages.id)).limit(PAGE);
-  rows.reverse();
+async function messagesOf(db: Db, topicId: number, meId: number, before: number | null, isAdmin = false, after: number | null = null) {
+  // "after" traz só as novas, da mais antiga para a mais recente, para nenhuma ficar de fora se chegarem muitas.
+  const scope = after !== null ? and(eq(chatMessages.topicId, topicId), gt(chatMessages.id, after)) : before ? and(eq(chatMessages.topicId, topicId), lt(chatMessages.id, before)) : eq(chatMessages.topicId, topicId);
+  const rows = await db.select().from(chatMessages).where(scope).orderBy(after !== null ? chatMessages.id : desc(chatMessages.id)).limit(PAGE);
+  if (after === null) rows.reverse();
   const ids = rows.map((row) => row.id);
   const replyIds = [...new Set(rows.map((row) => row.replyToId).filter((id): id is number => Boolean(id)))];
   const taskIds = [...new Set(rows.map((row) => row.taskId).filter((id): id is number => Boolean(id)))];
@@ -70,10 +78,10 @@ async function messagesOf(db: Db, topicId: number, meId: number, before: number 
   const [reactions, replies, people, linked, reminders, pollViews] = await Promise.all([
     ids.length ? db.select().from(chatReactions).where(inArray(chatReactions.messageId, ids)) : Promise.resolve([]),
     replyIds.length ? db.select({ id: chatMessages.id, authorName: chatMessages.authorName, body: chatMessages.body, attachments: chatMessages.attachments, deleted: chatMessages.deleted }).from(chatMessages).where(inArray(chatMessages.id, replyIds)) : Promise.resolve([]),
-    db.select({ id: members.id, name: members.name }).from(members),
+    ids.length ? db.select({ id: members.id, name: members.name }).from(members) : Promise.resolve([]),
     taskIds.length ? db.select({ id: tasks.id, title: tasks.title, status: tasks.status }).from(tasks).where(inArray(tasks.id, taskIds)) : Promise.resolve([]),
     ids.length ? db.select({ messageId: chatReminders.messageId, remindAt: chatReminders.remindAt }).from(chatReminders).where(and(eq(chatReminders.memberId, meId), inArray(chatReminders.messageId, ids), sql`${chatReminders.firedAt} is null`)) : Promise.resolve([]),
-    loadPolls(db, pollIds, meId, isAdmin).catch(() => []),
+    pollIds.length ? loadPolls(db, pollIds, meId, isAdmin).catch(() => []) : Promise.resolve([]),
   ]);
   const nameOf = (id: number) => people.find((person) => person.id === id)?.name ?? "Alguém";
   return {
@@ -143,51 +151,60 @@ export async function GET(request: Request) {
     // Um assunto: últimas mensagens (ou as anteriores a "before"), quem está digitando, e marca como lido.
     const topicId = Number(params.get("topic"));
     if (topicId) {
-      const [topic] = await db.select().from(chatTopics).where(eq(chatTopics.id, topicId)).limit(1);
-      const [channel] = topic ? await db.select().from(chatChannels).where(eq(chatChannels.id, topic.channelId)).limit(1) : [];
-      if (!topic || !channel) return json({ error: "Conversa não encontrada." }, 404);
+      const [found] = await db.select({ topic: chatTopics, channel: chatChannels }).from(chatTopics).innerJoin(chatChannels, eq(chatTopics.channelId, chatChannels.id)).where(eq(chatTopics.id, topicId)).limit(1);
+      if (!found) return json({ error: "Conversa não encontrada." }, 404);
+      const { topic, channel } = found;
       if (!canSee(channel, member.id)) return json({ error: "Esta conversa é privada." }, 403);
       const before = Number(params.get("before")) || null;
-      // Mensagens agendadas que já passaram da hora saem agora (de qualquer pessoa).
-      if (!before) await deliverScheduled(db, now).catch((error) => console.error("scheduled delivery failed", error));
-      const result = await messagesOf(db, topic.id, member.id, before, member.role === "admin");
-      const lastId = result.messages[result.messages.length - 1]?.id ?? 0;
-      const [read] = await db.select({ lastReadId: chatTopicReads.lastReadId }).from(chatTopicReads).where(and(eq(chatTopicReads.topicId, topic.id), eq(chatTopicReads.memberId, member.id))).limit(1);
-      if (!before && lastId) {
-        await db.insert(chatTopicReads).values({ topicId: topic.id, memberId: member.id, lastReadId: lastId })
-          .onConflictDoUpdate({ target: [chatTopicReads.topicId, chatTopicReads.memberId], set: { lastReadId: sql`max(${chatTopicReads.lastReadId}, ${lastId})` } });
-        // Abriu a conversa direta: o aviso do sino dessa pessoa já foi visto.
-        if (channel.kind === "dm") {
-          const peers = [...new Set(result.messages.filter((message) => message.memberId !== member.id).map((message) => message.authorName))];
-          if (peers.length) await db.update(notifications).set({ readAt: stamp }).where(and(eq(notifications.memberId, member.id), eq(notifications.kind, "chat_message"), isNull(notifications.readAt), inArray(notifications.actorName, peers))).catch((error) => console.error("chat notification read failed", error));
-        }
-      }
-      await touchPresence(db, member.id, stamp);
+      // Atualização leve: só o que chegou depois de "after", quem digita e até onde a outra pessoa leu.
+      const afterParam = params.get("after");
+      const after = !before && afterParam !== null && /^\d+$/.test(afterParam) ? Number(afterParam) : null;
+      const light = after !== null;
+      const peerId = channel.kind === "dm" ? dmMembers(channel.dmKey).find((id) => id !== member.id) ?? null : null;
       const typingSince = new Date(now.getTime() - TYPING_MS).toISOString();
-      const typing = await db.select({ name: members.name }).from(chatPresence).innerJoin(members, eq(chatPresence.memberId, members.id))
-        .where(and(eq(chatPresence.typingTopicId, topic.id), gt(chatPresence.typingAt, typingSince), ne(chatPresence.memberId, member.id)));
+      // Tudo de uma vez: cada consulta em fila custa uma viagem até o banco.
+      const [result, readRows, typing, peerReadRows, peerRows, scheduled, pinned] = await Promise.all([
+        messagesOf(db, topic.id, member.id, before, member.role === "admin", after),
+        db.select({ lastReadId: chatTopicReads.lastReadId }).from(chatTopicReads).where(and(eq(chatTopicReads.topicId, topic.id), eq(chatTopicReads.memberId, member.id))).limit(1),
+        db.select({ name: members.name }).from(chatPresence).innerJoin(members, eq(chatPresence.memberId, members.id))
+          .where(and(eq(chatPresence.typingTopicId, topic.id), gt(chatPresence.typingAt, typingSince), ne(chatPresence.memberId, member.id))),
+        peerId ? db.select({ lastReadId: chatTopicReads.lastReadId }).from(chatTopicReads).where(and(eq(chatTopicReads.topicId, topic.id), eq(chatTopicReads.memberId, peerId))).limit(1) : Promise.resolve([]),
+        !light && channel.kind === "dm" ? db.select({ name: members.name }).from(members).where(eq(members.id, peerId ?? member.id)).limit(1) : Promise.resolve([]),
+        light ? Promise.resolve([]) : db.select({ id: chatScheduled.id, body: chatScheduled.body, sendAt: chatScheduled.sendAt }).from(chatScheduled)
+          .where(and(eq(chatScheduled.memberId, member.id), eq(chatScheduled.channelId, channel.id), sql`${chatScheduled.sentAt} is null`)).orderBy(chatScheduled.sendAt).catch(() => []),
+        light ? Promise.resolve([]) : db.select({ id: chatMessages.id, authorName: chatMessages.authorName, body: chatMessages.body, attachments: chatMessages.attachments, pinnedAt: chatMessages.pinnedAt, pinnedByName: chatMessages.pinnedByName })
+          .from(chatMessages).where(and(eq(chatMessages.topicId, topic.id), isNotNull(chatMessages.pinnedAt), eq(chatMessages.deleted, false))).orderBy(desc(chatMessages.pinnedAt)).limit(MAX_PINS),
+        // Mensagens agendadas que já passaram da hora saem agora (de qualquer pessoa) e aparecem na próxima atualização.
+        light || before ? Promise.resolve() : deliverScheduled(db, now).catch((error) => console.error("scheduled delivery failed", error)),
+        touchPresence(db, member.id, stamp),
+      ]);
+      const lastReadId = readRows[0]?.lastReadId ?? 0;
+      const lastId = result.messages[result.messages.length - 1]?.id ?? 0;
+      const hasNew = !before && lastId > lastReadId;
+      // Sem mensagem nova não grava nada.
+      if (hasNew || (!before && !light && lastId && channel.kind === "dm")) {
+        const peers = channel.kind === "dm" ? [...new Set(result.messages.filter((message) => message.memberId !== member.id).map((message) => message.authorName))] : [];
+        await Promise.all([
+          hasNew ? db.insert(chatTopicReads).values({ topicId: topic.id, memberId: member.id, lastReadId: lastId })
+            .onConflictDoUpdate({ target: [chatTopicReads.topicId, chatTopicReads.memberId], set: { lastReadId: sql`max(${chatTopicReads.lastReadId}, ${lastId})` } }) : Promise.resolve(),
+          // Abriu a conversa direta: o aviso do sino dessa pessoa já foi visto.
+          peers.length ? db.update(notifications).set({ readAt: stamp }).where(and(eq(notifications.memberId, member.id), eq(notifications.kind, "chat_message"), isNull(notifications.readAt), inArray(notifications.actorName, peers))).catch((error) => console.error("chat notification read failed", error)) : Promise.resolve(),
+        ]);
+      }
+      const peerReadId = channel.kind === "dm" ? (peerId ? peerReadRows[0]?.lastReadId ?? 0 : null) : null;
+      const typingNames = typing.map((row) => row.name);
+      if (light) return json({ ...result, light: true, lastReadId, peerReadId, typing: typingNames });
       return json({
         ...result,
-        channel: await (async () => {
-          if (channel.kind !== "dm") return { id: channel.id, kind: channel.kind, name: channel.name, description: channel.topic, archived: channel.archived, peerId: null, canManage: member.role === "admin" || channel.createdById === member.id };
-          const peerId = dmMembers(channel.dmKey).find((id) => id !== member.id) ?? member.id;
-          const [peer] = await db.select({ name: members.name }).from(members).where(eq(members.id, peerId)).limit(1);
-          return { id: channel.id, kind: channel.kind, name: peer?.name ?? "Pessoa", description: "", archived: channel.archived, peerId, canManage: false };
-        })(),
-        lastReadId: read?.lastReadId ?? 0,
+        channel: channel.kind === "dm"
+          ? { id: channel.id, kind: channel.kind, name: peerRows[0]?.name ?? "Pessoa", description: "", archived: channel.archived, peerId: peerId ?? member.id, canManage: false }
+          : { id: channel.id, kind: channel.kind, name: channel.name, description: channel.topic, archived: channel.archived, peerId: null, canManage: member.role === "admin" || channel.createdById === member.id },
+        lastReadId,
         // Conversa direta: até onde a outra pessoa leu (mostra "Vista" embaixo das suas mensagens).
-        peerReadId: channel.kind === "dm" ? await (async () => {
-          const peerId = dmMembers(channel.dmKey).find((id) => id !== member.id);
-          if (!peerId) return null;
-          const [peerRead] = await db.select({ lastReadId: chatTopicReads.lastReadId }).from(chatTopicReads).where(and(eq(chatTopicReads.topicId, topic.id), eq(chatTopicReads.memberId, peerId))).limit(1);
-          return peerRead?.lastReadId ?? 0;
-        })() : null,
-        typing: typing.map((row) => row.name),
-        scheduled: (await db.select({ id: chatScheduled.id, body: chatScheduled.body, sendAt: chatScheduled.sendAt }).from(chatScheduled)
-          .where(and(eq(chatScheduled.memberId, member.id), eq(chatScheduled.channelId, channel.id), sql`${chatScheduled.sentAt} is null`)).orderBy(chatScheduled.sendAt).catch(() => [])),
-        pinned: (await db.select({ id: chatMessages.id, authorName: chatMessages.authorName, body: chatMessages.body, attachments: chatMessages.attachments, pinnedAt: chatMessages.pinnedAt, pinnedByName: chatMessages.pinnedByName })
-          .from(chatMessages).where(and(eq(chatMessages.topicId, topic.id), isNotNull(chatMessages.pinnedAt), eq(chatMessages.deleted, false))).orderBy(desc(chatMessages.pinnedAt)).limit(MAX_PINS))
-          .map((row) => ({ id: row.id, authorName: row.authorName, text: previewText(row), pinnedAt: row.pinnedAt, pinnedByName: row.pinnedByName })),
+        peerReadId,
+        typing: typingNames,
+        scheduled,
+        pinned: pinned.map((row) => ({ id: row.id, authorName: row.authorName, text: previewText(row), pinnedAt: row.pinnedAt, pinnedByName: row.pinnedByName })),
       });
     }
 
@@ -221,23 +238,23 @@ export async function GET(request: Request) {
       return json({ topicId: (await channelTopic(db, channel, stamp)).id });
     }
 
-    const [channels, people, presence, memberships] = await Promise.all([
+    const today = todayInSaoPaulo(now);
+    const [channels, people, presence, memberships, away] = await Promise.all([
       db.select().from(chatChannels).where(or(eq(chatChannels.kind, "channel"), sql`${chatChannels.dmKey} like ${`${member.id}:%`} or ${chatChannels.dmKey} like ${`%:${member.id}`}`)),
       db.select({ id: members.id, name: members.name, jobTitle: members.jobTitle, avatarIcon: members.avatarIcon, avatarKey: members.avatarKey, active: members.active }).from(members),
       db.select({ memberId: chatPresence.memberId, lastSeenAt: chatPresence.lastSeenAt, statusKind: chatPresence.statusKind, statusUntil: chatPresence.statusUntil }).from(chatPresence),
       db.select({ memberId: teamMembers.memberId, color: teams.color, name: teams.name }).from(teamMembers).innerJoin(teams, eq(teamMembers.teamId, teams.id)),
+      db.select({ memberId: absences.memberId, kind: absences.kind, startDate: absences.startDate, endDate: absences.endDate }).from(absences)
+        .where(and(sql`${absences.startDate} <= ${today}`, sql`${absences.endDate} >= ${today}`, eq(absences.status, "approved"))).catch(() => []),
+      touchPresence(db, member.id, stamp),
+      deliverScheduled(db, now).catch((error) => console.error("scheduled delivery failed", error)),
     ]);
-    const today = todayInSaoPaulo(now);
-    const away = await db.select({ memberId: absences.memberId, kind: absences.kind, startDate: absences.startDate, endDate: absences.endDate }).from(absences)
-      .where(and(sql`${absences.startDate} <= ${today}`, sql`${absences.endDate} >= ${today}`, eq(absences.status, "approved"))).catch(() => []);
     const statusOf = (id: number) => {
       const absence = away.find((row) => row.memberId === id && isAbsenceKind(row.kind));
       const own = presence.find((row) => row.memberId === id);
       const status = personStatus(own ? { kind: own.statusKind, until: own.statusUntil } : null, absence ? describeAbsence(absence, today) : null, now);
       return status ? { ...status, untilLabel: status.until ? untilText(status.until, now) : null } : null;
     };
-    await touchPresence(db, member.id, stamp);
-    await deliverScheduled(db, now).catch((error) => console.error("scheduled delivery failed", error));
     const visible = channels.filter((channel) => canSee(channel, member.id));
     const visibleIds = visible.map((channel) => channel.id);
     const nameOf = (id: number) => people.find((person) => person.id === id)?.name ?? "Pessoa";

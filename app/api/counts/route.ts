@@ -34,7 +34,7 @@ export async function GET() {
     const chat = await chatUnread(db, member.id).catch(() => ({ total: 0, direct: 0 }));
     const seen = now.toISOString();
     const reminded = await fireChatReminders(db, member.id, seen).catch((error) => { console.error("chat reminders failed", error); return 0; });
-    await db.insert(chatPresence).values({ memberId: member.id, lastSeenAt: seen }).onConflictDoUpdate({ target: chatPresence.memberId, set: { lastSeenAt: seen } }).catch(() => undefined);
+    await db.insert(chatPresence).values({ memberId: member.id, lastSeenAt: seen }).onConflictDoUpdate({ target: chatPresence.memberId, set: { lastSeenAt: seen }, setWhere: sql`coalesce(${chatPresence.lastSeenAt}, '') < ${new Date(now.getTime() - 45_000).toISOString()}` }).catch(() => undefined);
     return Response.json({
       chat: chat.total,
       chatDirect: chat.direct,
