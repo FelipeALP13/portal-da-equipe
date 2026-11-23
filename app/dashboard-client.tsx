@@ -390,7 +390,7 @@ export default function Home() {
       <aside className={`sidebar ${mobileMenu ? "open" : ""} ${sidebarOpen ? "expanded" : ""}`}
         onMouseEnter={pinnedOpen ? undefined : expandSidebar} onMouseLeave={pinnedOpen ? undefined : collapseSidebar}
         onFocus={pinnedOpen ? undefined : expandSidebar} onBlur={pinnedOpen ? undefined : (event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) collapseSidebar(); }}>
-        <button type="button" className={`brand brand-home ${tab === "hub" ? "active" : ""}`} onClick={() => go("hub")} aria-label={`${brand.name}: ir para a Visão geral`} title="Visão geral" aria-current={tab === "hub" ? "page" : undefined}><span className={brand.logoUrl ? "brand-mark has-logo" : "brand-mark"}><BrandLogo fallback={<Users size={21} />} /></span><div><strong>{brand.name}</strong>{brand.tagline && <small>{brand.tagline}</small>}</div></button>
+        <button type="button" className={`brand brand-home ${tab === "hub" ? "active" : ""} ${brand.name.length > 22 ? "long-name" : ""}`} onClick={() => go("hub")} aria-label={`${brand.name}: ir para a Visão geral`} title={`${brand.name} · Visão geral`} aria-current={tab === "hub" ? "page" : undefined}><span className={brand.logoUrl ? "brand-mark has-logo" : "brand-mark"}><BrandLogo fallback={<Users size={21} />} /></span><div><strong>{brand.name}</strong>{brand.tagline && <small>{brand.tagline}</small>}</div></button>
         <button className="close-menu" onClick={() => setMobileMenu(false)} aria-label="Fechar menu"><X /></button>
         <SidebarNav activeKey={tab} expanded={sidebarOpen} sections={[
           { items: [

@@ -4039,3 +4039,9 @@ html[data-theme="dark"] .community {
 .brand-home.active .brand-mark { box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-on-dark, #fff) 70%, transparent); }
 .brand-home:focus-visible { border-radius: 12px; outline: 2px solid #63a4ff; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .brand-home .brand-mark { transition: none; } }
+/* Menu lateral: nome grande da marca quebra em até duas linhas, sem cortar */
+.sidebar .brand > div { flex: 0 0 168px; width: 168px; min-width: 0; text-align: left; white-space: normal; }
+.sidebar .brand strong { display: -webkit-box; overflow: hidden; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.sidebar .brand.long-name strong { font-size: var(--fs-base); line-height: 1.25; letter-spacing: -.01em; }
+.sidebar .brand small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) { .sidebar .brand > div { flex-basis: calc(min(280px, 86vw) - 136px); width: calc(min(280px, 86vw) - 136px); } }
