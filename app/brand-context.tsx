@@ -35,9 +35,26 @@ export function BrandProvider({ initial, children }: { initial: PublicBrand; chi
 
 export const useBrand = () => useContext(BrandContext);
 
+/** Só logo com partes transparentes ganha fundo branco (para não sumir no menu escuro); logo cheio fica sem contorno. */
+function markLogoBackdrop(image: HTMLImageElement | null) {
+  if (!image?.complete || !image.naturalWidth) return;
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 24;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.drawImage(image, 0, 0, 24, 24);
+    const { data } = context.getImageData(0, 0, 24, 24);
+    let transparent = false;
+    for (let index = 3; index < data.length && !transparent; index += 4) transparent = data[index] < 245;
+    if (transparent) image.dataset.backdrop = "1";
+    else delete image.dataset.backdrop;
+  } catch { /* sem leitura da imagem: fica sem fundo */ }
+}
+
 /** Logo da empresa, ou o ícone padrão quando não há logo. */
 export function BrandLogo({ fallback, className }: { fallback: React.ReactNode; className?: string }) {
   const { brand } = useBrand();
   // eslint-disable-next-line @next/next/no-img-element
-  return brand.logoUrl ? <img className={className ? `${className} brand-logo-img` : "brand-logo-img"} src={brand.logoUrl} alt="" /> : <>{fallback}</>;
+  return brand.logoUrl ? <img ref={markLogoBackdrop} onLoad={(event) => markLogoBackdrop(event.currentTarget)} className={className ? `${className} brand-logo-img` : "brand-logo-img"} src={brand.logoUrl} alt="" /> : <>{fallback}</>;
 }

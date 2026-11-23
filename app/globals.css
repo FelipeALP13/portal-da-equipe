@@ -4045,3 +4045,14 @@ html[data-theme="dark"] .community {
 .sidebar .brand.long-name strong { font-size: var(--fs-base); line-height: 1.25; letter-spacing: -.01em; }
 .sidebar .brand small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 760px) { .sidebar .brand > div { flex-basis: calc(min(280px, 86vw) - 136px); width: calc(min(280px, 86vw) - 136px); } }
+/* Logo ocupa o espaço inteiro (sem moldura branca); logo não quadrado aparece inteiro, sem corte */
+.brand-mark.has-logo, .brand-mark.has-logo:hover, .brand:hover .brand-mark.has-logo, .login-brand span.has-logo, .brand-logo-preview:has(img) { padding: 0; }
+.brand-logo-preview:has(img) { border-color: transparent; }
+.brand-home.active .brand-mark.has-logo { box-shadow: none; }
+/* O fundo branco (para logos transparentes) fica na própria imagem: não vaza como contorno nos cantos */
+.brand-mark.has-logo, .brand-mark.has-logo:hover, .brand:hover .brand-mark.has-logo, .login-brand span.has-logo, .login-welcome .login-brand > span.has-logo { background: transparent; }
+.has-logo .brand-logo-img, .brand-logo-preview .brand-logo-img { background: #ffffff; }
+/* Logo cheio: nada atrás dele (o branco aparecia como um fio na borda ao reduzir a imagem). Com transparência: fundo branco. */
+.has-logo .brand-logo-img, .brand-logo-preview .brand-logo-img { background: transparent; }
+.has-logo .brand-logo-img[data-backdrop="1"], .brand-logo-preview .brand-logo-img[data-backdrop="1"] { background: #ffffff; }
+.brand-logo-preview:has(img) { background: transparent; }
