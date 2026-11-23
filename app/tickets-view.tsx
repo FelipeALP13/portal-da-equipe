@@ -36,6 +36,7 @@ import Columns3 from "lucide-react/icons/columns-3";
 import List from "lucide-react/icons/list";
 import MessageSquareText from "lucide-react/icons/message-square-text";
 import Pencil from "lucide-react/icons/pencil";
+import SlidersHorizontal from "lucide-react/icons/sliders-horizontal";
 import { fillReply, onTicketBoard, REPLY_FIELDS, repliesFor, TICKET_BOARD_STATUSES, type TicketBoardStatus } from "./team-tools";
 import { canHandleTicket, compareTickets, describeTicketEvent, formatMinutes, isActiveTicket, isTicketLate, parseStoredDate, resolutionHours, resolutionStatus, slaStatus, ticketCode, ticketJourney, ticketStatuses, ticketStatusLabels, ticketTypeLabels, ticketTypes, ticketUrgencies, ticketUrgencyLabels, type SlaState, type TicketEventKind, type TicketStatus, type TicketType, type TicketUrgency } from "./tickets";
 
@@ -119,6 +120,7 @@ export default function TicketsView({ openRequest = null, onOpenRequestHandled, 
   const [error, setError] = useState("");
   const [scope, setScope] = useState<Scope | null>(null);
   const [statusFilter, setStatusFilter] = useState<"active" | "closed" | "all">("active");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [teamFilter, setTeamFilter] = useState("");
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
@@ -276,18 +278,20 @@ export default function TicketsView({ openRequest = null, onOpenRequestHandled, 
     { key: "all", label: "Todos", show: true },
   ];
 
+  const activeFilters = (teamFilter ? 1 : 0) + (statusFilter !== "active" ? 1 : 0);
   return <div className="tickets-page">
-    <div className="tasks-toolbar">
+    <div id="chamados-filtros" className={`tasks-toolbar ${filtersOpen ? "filters-open" : ""}`}>
       <div className="tasks-scope" role="group" aria-label="Quais chamados">
         {scopes.filter((entry) => entry.show).map((entry) => <button key={entry.key} className={effectiveScope === entry.key ? "active" : ""} aria-pressed={effectiveScope === entry.key} onClick={() => setScope(entry.key)}>{entry.label}</button>)}
       </div>
       <label className="tasks-search"><Search size={14} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por título, código ou cliente" /></label>
-      {(data?.teams.length ?? 0) > 0 && <select aria-label="Filtrar por time" value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)}><option value="">Todos os times</option>{data?.teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}</select>}
-      {layout === "list" && <select aria-label="Situação" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}><option value="active">Em aberto</option><option value="closed">Encerrados</option><option value="all">Todos</option></select>}
+      {(data?.teams.length ?? 0) > 0 && <select className="filter-select" aria-label="Filtrar por time" value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)}><option value="">Todos os times</option>{data?.teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}</select>}
+      {layout === "list" && <select className="filter-select" aria-label="Situação" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}><option value="active">Em aberto</option><option value="closed">Encerrados</option><option value="all">Todos</option></select>}
       <div className="tasks-view-toggle" role="group" aria-label="Como mostrar">
         <button className={layout === "list" ? "active" : ""} aria-pressed={layout === "list"} onClick={() => setLayout("list")} title="Lista"><List size={15} /> Lista</button>
         <button className={layout === "board" ? "active" : ""} aria-pressed={layout === "board"} onClick={() => setLayout("board")} title="Quadro"><Columns3 size={15} /> Quadro</button>
       </div>
+      <button type="button" className={`filters-toggle ${filtersOpen ? "active" : ""}`} aria-expanded={filtersOpen} aria-controls="chamados-filtros" onClick={() => setFiltersOpen((open) => !open)}><SlidersHorizontal size={16} /> Filtros{activeFilters > 0 && <b>{activeFilters}</b>}</button>
       <MoreMenu actions={[
         ...(data?.me.canEdit ? [{ key: "replies", label: "Respostas prontas", icon: <MessageSquareText size={15} />, onClick: () => setManagingReplies(true), title: "Textos prontos para responder os chamados" }] : []),
         ...(data ? [{ key: "export", label: "Exportar Excel", icon: <Download size={15} />, onClick: exportExcel, disabled: !visible.length, title: "Baixa em Excel os chamados que estão na tela, com os filtros aplicados" }] : []),

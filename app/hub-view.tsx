@@ -78,10 +78,11 @@ export function HubView({ onOpenReviews, onOpenPulse, items, movements, schedule
     <HubReviews enabled={Boolean(currentUser?.active)} onOpen={onOpenReviews} />
     <HubPulse enabled={Boolean(currentUser?.active)} onOpen={onOpenPulse} />
 
-    <NoticeBoard />
-    <TeamWall />
-
-    <HubAgenda events={agenda} today={today} onOpen={onOpenAgenda} />
+    <div className="hub-quiet">
+      <NoticeBoard />
+      <TeamWall />
+      <HubAgenda events={agenda} today={today} onOpen={onOpenAgenda} />
+    </div>
 
     <HubOnboarding enabled={Boolean(currentUser?.active)} onOpen={() => onOpen("people")} />
 

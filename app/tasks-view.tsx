@@ -20,6 +20,7 @@ import Download from "lucide-react/icons/download";
 import { MoreMenu } from "./more-menu";
 import { downloadXlsx, type CellValue } from "./xlsx-writer";
 import ListChecks from "lucide-react/icons/list-checks";
+import SlidersHorizontal from "lucide-react/icons/sliders-horizontal";
 import { type Task, type TaskTeam, type TasksData, type Lookups, boardStatuses, BOARD_DONE_LIMIT, todayInSaoPaulo, fold, postTask, StatusIcon, PriorityIcon, TeamChip, AvatarStack, DueChip } from "./task-shared";
 import { NewTaskModal, TaskDrawer, TemplatesModal, ClientsModal } from "./task-drawer";
 
@@ -39,6 +40,7 @@ const involves = (task: Task, memberId: number) => task.owners.includes(memberId
 export default function TasksView({ openRequest = null, onOpenRequestHandled, createRequest = 0 }: { openRequest?: number | null; onOpenRequestHandled?: () => void; createRequest?: number }) {
   const [data, setData] = useState<TasksData | null>(null);
   const [error, setError] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [view, setView] = useState<"list" | "board">("list");
   const [filters, setFilters] = useState<Filters>({ scope: "all", person: "", priority: "", team: "", client: "", category: "", search: "" });
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ done: true, canceled: true });
@@ -242,6 +244,7 @@ export default function TasksView({ openRequest = null, onOpenRequestHandled, cr
         <button className={view === "list" ? "active" : ""} aria-pressed={view === "list"} onClick={() => changeView("list")} title="Lista"><LayoutList size={15} /><span>Lista</span></button>
         <button className={view === "board" ? "active" : ""} aria-pressed={view === "board"} onClick={() => changeView("board")} title="Quadro"><Columns3 size={15} /><span>Quadro</span></button>
       </div>
+      <button type="button" className={`filters-toggle ${filtersOpen ? "active" : ""}`} aria-expanded={filtersOpen} aria-controls="demandas-filtros" onClick={() => setFiltersOpen((open) => !open)}><SlidersHorizontal size={16} /> Filtros{activeFilters > 0 && <b>{activeFilters}</b>}</button>
       <MoreMenu actions={[
         ...(data && data.tasks.length > 0 ? [{ key: "export", label: "Exportar Excel", icon: <Download size={15} />, onClick: exportExcel, disabled: !visible.length, title: "Baixa em Excel as demandas que estão na tela, com os filtros e a busca aplicados" }] : []),
         ...(data?.me.isAdmin ? [
@@ -252,7 +255,7 @@ export default function TasksView({ openRequest = null, onOpenRequestHandled, cr
       ]} />
       {data?.me.canEdit && <button className="primary-button tasks-new" onClick={() => setCreating("todo")} title="Atalho: tecla C"><Plus size={16} /> Nova demanda</button>}
     </div>
-    <div className="tasks-filters">
+    <div id="demandas-filtros" className={`tasks-filters ${filtersOpen ? "is-open" : ""}`}>
       <select aria-label="Filtrar por pessoa" value={filters.person} onChange={(event) => setFilters({ ...filters, person: event.target.value })}>
         <option value="">Todas as pessoas</option>
         <option value="none">Sem responsável</option>

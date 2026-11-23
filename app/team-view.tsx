@@ -23,7 +23,7 @@ export function TeamView({ members, currentUser, saving, onAddMember, onEditMemb
         <article><strong>Somente leitura</strong><p>Consulta demandas, chamados, escala, estoque e pessoas, sem alterar nada.</p></article>
       </div>
       <div className="team-panel">
-        <div className="section-heading team-heading"><div><h2>Usuários cadastrados</h2><p>Crie o usuário e a senha inicial e escolha o perfil. As permissões extras do estoque e da escala ficam na aba Permissões de cada pessoa.</p></div><div className="team-heading-actions"><span>{members.length} {members.length === 1 ? "usuário" : "usuários"}</span><button className="secondary-button" onClick={onAddMember}><UserPlus size={16} /> Adicionar membro</button></div></div>
+        <div className="section-heading team-heading"><div><h2>Usuários cadastrados</h2><p>Crie o usuário e a senha inicial e escolha o perfil. As permissões extras do estoque e da escala ficam na aba Permissões de cada pessoa.</p></div><div className="team-heading-actions"><span>{members.length} {members.length === 1 ? "usuário" : "usuários"}</span><button className="primary-button" onClick={onAddMember}><UserPlus size={16} /> Adicionar membro</button></div></div>
         <div className="team-table">
           <div className="team-table-head"><span>Usuário</span><span>Permissão</span><span>Status</span><span>Entrada</span><span>Ações</span></div>
           {members.map((member) => <div className="team-row" key={member.userId}>
