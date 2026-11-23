@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: brand.name,
     description: APP_DESCRIPTION,
     manifest: "/api/manifest",
-    icons: logo ? { icon: logo, shortcut: logo, apple: brandIconUrl(brand, 512) ?? logo } :{ icon: "/favicon.svg", shortcut: "/favicon.svg", apple: "/apple-touch-icon.png" },
+    icons: logo ? { icon: logo, shortcut: logo, apple: brandIconUrl(brand, 512) ?? logo } : { icon: "/favicon.png", shortcut: "/favicon.png", apple: "/apple-touch-icon.png" },
     // No iPhone/iPad: "Adicionar à Tela de Início" abre como app.
     appleWebApp: { capable: true, title: brand.shortName, statusBarStyle: "default" },
   };
