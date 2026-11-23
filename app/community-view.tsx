@@ -4,13 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useLiveRefresh } from "./live";
 import Archive from "lucide-react/icons/archive";
 import ArchiveRestore from "lucide-react/icons/archive-restore";
-import Hash from "lucide-react/icons/hash";
 import MessagesSquare from "lucide-react/icons/messages-square";
 import Pencil from "lucide-react/icons/pencil";
 import Plus from "lucide-react/icons/plus";
 import Search from "lucide-react/icons/search";
 import X from "lucide-react/icons/x";
-import { call, fold, MyStatus, PersonAvatar, shortWhen, statusText, Thread, type ChannelInfo, type Me, type Person } from "./chat-thread";
+import { call, ChannelMark, fold, MyStatus, PersonAvatar, shortWhen, statusText, Thread, type ChannelInfo, type Me, type Person } from "./chat-thread";
 import { Avatar } from "./task-shared";
 
 export type Conversation = { id: number; kind: "channel" | "dm"; name: string; topic: string; teamId: number | null; peerId: number | null; archived: boolean; lastMessageAt: string | null; createdByName: string; canManage: boolean; unread: number; topicId: number | null; preview: { authorName: string; text: string; at: string } | null };
@@ -94,9 +93,9 @@ export async function conversationTopic(conversation: Conversation) {
 export function ConversationRow({ conversation, people, active, onOpen }: { conversation: Conversation; people: Person[]; active: boolean; onOpen: () => void }) {
   const status = conversation.kind === "dm" ? people.find((person) => person.id === conversation.peerId)?.status : null;
   return <button className={`cv-row ${active ? "active" : ""} ${conversation.unread ? "unread" : ""}`} onClick={onOpen}>
-    {conversation.kind === "dm" ? <PersonAvatar id={conversation.peerId} name={conversation.name} people={people} size={38} status /> : <span className="cv-head-icon"><Hash size={17} /></span>}
+    {conversation.kind === "dm" ? <PersonAvatar id={conversation.peerId} name={conversation.name} people={people} size={38} status /> : <span className="cv-head-icon"><ChannelMark size={18} /></span>}
     <span className="cv-row-text">
-      <span className="cv-row-top"><strong>{conversation.kind === "dm" ? conversation.name : `#${conversation.name}`}</strong>{status && <span className={`cv-status-tag status-${status.kind}`} title={statusText(status)}>{status.label}</span>}{conversation.preview && <time>{shortWhen(conversation.preview.at)}</time>}</span>
+      <span className="cv-row-top"><strong>{conversation.kind === "dm" ? conversation.name : `/${conversation.name}`}</strong>{status && <span className={`cv-status-tag status-${status.kind}`} title={statusText(status)}>{status.label}</span>}{conversation.preview && <time>{shortWhen(conversation.preview.at)}</time>}</span>
       <span className="cv-row-bottom"><small>{conversation.preview ? <><b>{conversation.preview.authorName}:</b> {conversation.preview.text}</> : conversation.kind === "dm" ? "Diga oi" : conversation.topic || "Sem mensagens ainda"}</small>{conversation.unread > 0 && !active && <em>{conversation.unread > 99 ? "99+" : conversation.unread}</em>}</span>
     </span>
   </button>;
@@ -161,7 +160,7 @@ export default function CommunityView({ openChannel }: { openChannel?: number | 
         <header className="cv-group-head"><span>{showArchived ? "Canais arquivados" : "Canais"}</span><button className="cv-icon-button small" onClick={() => setCreating(true)} aria-label="Criar canal" title="Criar canal"><Plus size={15} /></button></header>
         {channels.map((entry) => <ConversationRow key={entry.id} conversation={entry} people={list.people} active={selected === entry.id} onOpen={() => void open(entry)} />)}
         {archivedCount > 0 && <button className="cv-more" onClick={() => setShowArchived((value) => !value)}>{showArchived ? "Voltar aos canais" : `Arquivados (${archivedCount})`}</button>}
-        <header className="cv-group-head"><span>Pessoas</span><button className="cv-icon-button small" onClick={() => setPickingPerson(true)} aria-label="Conversar com uma pessoa" title="Conversar com uma pessoa"><Plus size={15} /></button></header>
+        <header className="cv-group-head"><span>Diretas</span><button className="cv-icon-button small" onClick={() => setPickingPerson(true)} aria-label="Conversar com uma pessoa" title="Conversar com uma pessoa"><Plus size={15} /></button></header>
         {people.map((entry) => <ConversationRow key={entry.id} conversation={entry} people={list.people} active={selected === entry.id} onOpen={() => void open(entry)} />)}
         {!people.length && !term && <p className="cv-note">Converse em particular com alguém pelo +. Só vocês dois leem.</p>}
         {term && !channels.length && !people.length && hits === null && <p className="cv-note">Nenhuma conversa com esse nome.</p>}
@@ -173,7 +172,7 @@ export default function CommunityView({ openChannel }: { openChannel?: number | 
       {topicId ? <Thread key={topicId} topicId={topicId} focus={focus} people={list.people} me={list.me} onChanged={() => void load()} onBack={() => setMobileChat(false)}
         actions={(channel) => channel.canManage && channel.kind === "channel" ? <span className="cv-thread-actions">
           <button className="cv-icon-button" onClick={() => setEditing(channel)} aria-label="Editar canal" title="Editar canal"><Pencil size={16} /></button>
-          <button className="cv-icon-button" onClick={() => { if (channel.archived || window.confirm(`Arquivar #${channel.name}? Ninguém mais escreve nele, mas o histórico continua.`)) void call("/api/chat", { action: channel.archived ? "restoreChannel" : "archiveChannel", channelId: channel.id }).then(load); }} aria-label={channel.archived ? "Restaurar canal" : "Arquivar canal"} title={channel.archived ? "Restaurar canal" : "Arquivar canal"}>{channel.archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}</button>
+          <button className="cv-icon-button" onClick={() => { if (channel.archived || window.confirm(`Arquivar /${channel.name}? Ninguém mais escreve nele, mas o histórico continua.`)) void call("/api/chat", { action: channel.archived ? "restoreChannel" : "archiveChannel", channelId: channel.id }).then(load); }} aria-label={channel.archived ? "Restaurar canal" : "Arquivar canal"} title={channel.archived ? "Restaurar canal" : "Arquivar canal"}>{channel.archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}</button>
         </span> : null} />
         : <div className="cv-loading"><div className="loading-list"><span /></div></div>}
     </main>
@@ -188,7 +187,7 @@ function ChannelModal({ channel, onClose, onSaved }: { channel?: ChannelInfo; on
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   return <div className="modal-layer"><button className="backdrop" onClick={onClose} aria-label="Fechar janela" /><form className="modal" onSubmit={async (event) => { event.preventDefault(); setSaving(true); setError(""); try { const result = await call("/api/chat", channel ? { action: "updateChannel", channelId: channel.id, ...form } : { action: "createChannel", ...form }); onSaved(result.id ? Number(result.id) : null); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível salvar."); setSaving(false); } }}>
-    <div className="modal-head"><div><h2>{channel ? `Editar #${channel.name}` : "Novo canal"}</h2><p>Canais são abertos: todos da equipe leem e escrevem.</p></div><button type="button" onClick={onClose} aria-label="Fechar"><X /></button></div>
+    <div className="modal-head"><div><h2>{channel ? `Editar /${channel.name}` : "Novo canal"}</h2><p>Canais são abertos: todos da equipe leem e escrevem.</p></div><button type="button" onClick={onClose} aria-label="Fechar"><X /></button></div>
     <div className="form-grid">
       <label className="full"><span>Nome do canal</span><input autoFocus required maxLength={40} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Ex.: futebol" /></label>
       <label className="full"><span>Descrição <em>opcional</em></span><input maxLength={200} value={form.topic} onChange={(event) => setForm({ ...form, topic: event.target.value })} placeholder="Ex.: Resenha dos jogos do fim de semana" /></label>

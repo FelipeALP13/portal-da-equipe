@@ -207,7 +207,7 @@ export async function GET(request: Request) {
         results: rows.filter((row) => row.topicId).map((row) => {
           const channel = channels.find((entry) => entry.id === row.channelId)!;
           const peerId = channel.kind === "dm" ? dmMembers(channel.dmKey).find((id) => id !== member.id) ?? member.id : null;
-          return { id: row.id, topicId: row.topicId, channelId: row.channelId, kind: channel.kind, where: channel.kind === "dm" ? peers.find((peer) => peer.id === peerId)?.name ?? "Conversa" : `#${channel.name}`, memberId: row.memberId, authorName: row.authorName, text: snippet(plainText(row.body), 160), createdAt: row.createdAt };
+          return { id: row.id, topicId: row.topicId, channelId: row.channelId, kind: channel.kind, where: channel.kind === "dm" ? peers.find((peer) => peer.id === peerId)?.name ?? "Conversa" : `/${channel.name}`, memberId: row.memberId, authorName: row.authorName, text: snippet(plainText(row.body), 160), createdAt: row.createdAt };
         }),
       });
     }
@@ -319,7 +319,7 @@ export async function POST(request: Request) {
       const allowed = channel.kind === "dm" ? dmMembers(channel.dmKey) : people.map((person) => person.id);
       const mentioned = findMentions(text, people).filter((id) => id !== member!.id && allowed.includes(id));
       if (mentioned.length) {
-        const where = channel.kind === "dm" ? "na conversa direta" : `em #${channel.name}`;
+        const where = channel.kind === "dm" ? "na conversa direta" : `em /${channel.name}`;
         await db.insert(notifications).values(mentioned.map((id) => ({ memberId: id, kind: "chat_mention" as const, actorName: member!.name, body: `${where}: ${snippet(text, 100)}`.slice(0, 140), createdAt: now }))).catch((error) => console.error("chat notification failed", error));
       }
       // Conversa direta: a outra pessoa recebe aviso no sino (com som, aviso na tela e no celular).
@@ -479,7 +479,7 @@ export async function POST(request: Request) {
       const name = channelSlug(body.name);
       if (name.length < 2) return json({ error: "Dê um nome ao canal (letras, números e hífen)." }, 400);
       const [exists] = await db.select({ id: chatChannels.id }).from(chatChannels).where(and(eq(chatChannels.kind, "channel"), eq(chatChannels.name, name))).limit(1);
-      if (exists) return json({ error: `Já existe o canal #${name}.` }, 409);
+      if (exists) return json({ error: `Já existe o canal /${name}.` }, 409);
       const [channel] = await db.insert(chatChannels).values({ kind: "channel", name, topic: cleanMultiline(body.topic, 200).replace(/\n/g, " "), createdById: member.id, createdByName: member.name, createdAt: now }).returning({ id: chatChannels.id });
       return json({ id: channel.id, name }, 201);
     }
@@ -492,7 +492,7 @@ export async function POST(request: Request) {
         const name = channelSlug(body.name);
         if (name.length < 2) return json({ error: "Dê um nome ao canal (letras, números e hífen)." }, 400);
         const [exists] = await db.select({ id: chatChannels.id }).from(chatChannels).where(and(eq(chatChannels.kind, "channel"), eq(chatChannels.name, name), ne(chatChannels.id, channel.id))).limit(1);
-        if (exists) return json({ error: `Já existe o canal #${name}.` }, 409);
+        if (exists) return json({ error: `Já existe o canal /${name}.` }, 409);
         await db.update(chatChannels).set({ name, topic: cleanMultiline(body.topic, 200).replace(/\n/g, " ") }).where(eq(chatChannels.id, channel.id));
       } else {
         await db.update(chatChannels).set({ archived: action === "archiveChannel" }).where(eq(chatChannels.id, channel.id));

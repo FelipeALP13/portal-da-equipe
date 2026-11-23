@@ -54,7 +54,7 @@ export async function deliverScheduled(db: Db, now = new Date()) {
       const audience = channel.kind === "dm" ? dmMembers(channel.dmKey) : people.map((person) => person.id);
       const mentioned = findMentions(item.body, people).filter((id) => id !== author.id && audience.includes(id));
       if (mentioned.length) {
-        const where = channel.kind === "dm" ? "na conversa direta" : `em #${channel.name}`;
+        const where = channel.kind === "dm" ? "na conversa direta" : `em /${channel.name}`;
         await db.insert(notifications).values(mentioned.map((id) => ({ memberId: id, kind: "chat_mention" as const, actorName: author.name, body: `${where}: ${snippet(item.body, 100)}`.slice(0, 140), createdAt: stamp }))).catch((error) => console.error("scheduled mention failed", error));
       }
     } catch (error) {

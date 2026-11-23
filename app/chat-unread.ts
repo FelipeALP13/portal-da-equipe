@@ -38,7 +38,7 @@ export async function fireChatReminders(db: Db, memberId: number, now: string) {
     .where(inArray(chatMessages.id, claimed.map((row) => row.messageId)));
   const rows = messages.filter((message) => !message.deleted).map((message) => ({
     memberId, kind: "chat_reminder" as const, actorName: message.authorName,
-    body: `${message.kind === "dm" ? "na conversa direta" : `em #${message.name}`}: ${snippet(message.body || "Imagem", 100)}`.slice(0, 140),
+    body: `${message.kind === "dm" ? "na conversa direta" : `em /${message.name}`}: ${snippet(message.body || "Imagem", 100)}`.slice(0, 140),
     createdAt: now,
   }));
   if (rows.length) await db.insert(notifications).values(rows);

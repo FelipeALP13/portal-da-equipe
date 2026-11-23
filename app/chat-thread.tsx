@@ -16,7 +16,6 @@ import ArrowDown from "lucide-react/icons/arrow-down";
 import ArrowLeft from "lucide-react/icons/arrow-left";
 import Check from "lucide-react/icons/check";
 import CheckCheck from "lucide-react/icons/check-check";
-import Hash from "lucide-react/icons/hash";
 import ImagePlus from "lucide-react/icons/image-plus";
 import ListPlus from "lucide-react/icons/list-plus";
 import ListTodo from "lucide-react/icons/list-todo";
@@ -420,6 +419,11 @@ export function Composer({ people, placeholder, onSend, onTyping, pending, setPe
   </div>;
 }
 
+/** Marca dos canais: a barra diagonal, que vem do símbolo da empresa. */
+export function ChannelMark({ size = 18 }: { size?: number }) {
+  return <svg className="cv-channel-mark" width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M17.5 4.5 6.5 19.5" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" /></svg>;
+}
+
 /** Uma conversa (canal ou pessoa): cabeçalho, mensagens e o campo para escrever. */
 type PinnedMessage = { id: number; authorName: string; text: string; pinnedAt: string; pinnedByName: string | null };
 
@@ -578,7 +582,7 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
   const mentionsMe = (message: Message) => Boolean(myName) && message.memberId !== me.id && (fold(message.body).includes(`@${fold(myName)}`) || message.reply?.authorName === myName);
   const firstNew = newSince ? messages.find((message) => message.id > newSince && message.memberId !== me.id)?.id ?? null : null;
   const isDm = channel?.kind === "dm";
-  const where = channel ? (isDm ? channel.name : `#${channel.name}`) : "";
+  const where = channel ? (isDm ? channel.name : `/${channel.name}`) : "";
   const peer = isDm ? people.find((person) => person.id === channel?.peerId) : null;
   const lastLive = isDm ? [...messages].reverse().find((message) => !message.deleted) : undefined;
   const lastMine = lastLive?.memberId === me.id ? lastLive.id : null;
@@ -588,7 +592,7 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
   return <div className={`cv-thread ${compact ? "compact" : ""}`}>
     <header className="cv-thread-head">
       {onBack && <button className="cv-icon-button cv-back" onClick={onBack} aria-label="Voltar"><ArrowLeft size={18} /></button>}
-      {channel && (isDm ? <PersonAvatar id={channel.peerId} name={channel.name} people={people} size={34} status /> : <span className="cv-head-icon"><Hash size={17} /></span>)}
+      {channel && (isDm ? <PersonAvatar id={channel.peerId} name={channel.name} people={people} size={34} status /> : <span className="cv-head-icon"><ChannelMark size={18} /></span>)}
       <div className="cv-thread-title">
         <h3>{where || "…"}</h3>
         {channel && <small>{isDm ? (peer?.status ? statusText(peer.status) : peer?.online ? "Online agora" : peer?.jobTitle || "Conversa particular") : channel.description || "Canal aberto a toda a equipe"}</small>}
@@ -608,7 +612,7 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
     <div className="cv-posts" ref={listRef}>
       {hasMore && <button className="cv-older" onClick={() => void loadOlder()}>Carregar mensagens anteriores</button>}
       {loaded && !messages.length && <div className="cv-start">
-        {isDm ? <PersonAvatar id={channel?.peerId ?? null} name={channel?.name ?? ""} people={people} size={56} /> : <span className="cv-head-icon big"><Hash size={26} /></span>}
+        {isDm ? <PersonAvatar id={channel?.peerId ?? null} name={channel?.name ?? ""} people={people} size={56} /> : <span className="cv-head-icon big"><ChannelMark size={28} /></span>}
         <strong>{isDm ? `Converse com ${channel?.name}` : `Bem-vindo ao ${where}`}</strong>
         <p>{isDm ? "Só vocês dois leem estas mensagens." : "Ainda não tem mensagens aqui. Mande a primeira."}</p>
       </div>}
