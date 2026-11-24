@@ -5,7 +5,7 @@ import Image from "next/image";
 import CalendarDays from "lucide-react/icons/calendar";
 import Plus from "lucide-react/icons/plus";
 import X from "lucide-react/icons/x";
-import { dueState, taskPriorityLabels, type TaskEventKind, type TaskPriority, type TaskStatus } from "./tasks";
+import { dueState, taskPriorityLabels, type TaskEventKind, type TaskPriority, type TaskStatus, type TaskDuePeriod } from "./tasks";
 import CalendarOff from "lucide-react/icons/calendar-off";
 import { absenceOn, describeAbsence } from "./absences";
 import { useAbsences } from "./use-absences";
@@ -23,6 +23,7 @@ export type Task = {
   openedOn: string | null;
   startDate: string | null;
   dueDate: string | null;
+  duePeriod: TaskDuePeriod | null;
   completedOn: string | null;
   estimatedHours: number | null;
   workedHours: number | null;
@@ -233,5 +234,23 @@ export function MentionTextarea({ value, onChange, members, onSubmit, placeholde
         <button type="button" className={index === active ? "active" : ""} onMouseDown={(event) => { event.preventDefault(); choose(member); }}><Avatar member={member} size={20} />{member.name}</button>
       </li>)}
     </ul>}
+  </div>;
+}
+
+
+/** Escolha entre poucas opções, todas visíveis (setas do teclado trocam a opção). */
+export function SegmentedControl<T extends string | number | null>({ label, value, options, onChange, disabled }: { label: string; value: T; options: { value: T; label: string; title?: string }[]; onChange: (value: T) => void; disabled?: boolean }) {
+  const move = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
+    if (!step || disabled) return;
+    event.preventDefault();
+    const index = options.findIndex((option) => option.value === value);
+    const next = (index + step + options.length) % options.length;
+    onChange(options[next].value);
+    const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>("button");
+    buttons[next]?.focus();
+  };
+  return <div className="segmented" role="radiogroup" aria-label={label} onKeyDown={move}>
+    {options.map((option) => <button key={String(option.value)} type="button" role="radio" aria-checked={option.value === value} tabIndex={option.value === value ? 0 : -1} className={option.value === value ? "active" : ""} disabled={disabled} title={option.title} onClick={() => onChange(option.value)}>{option.label}</button>)}
   </div>;
 }

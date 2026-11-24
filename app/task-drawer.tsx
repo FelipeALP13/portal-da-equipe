@@ -13,7 +13,7 @@ import Trash2 from "lucide-react/icons/trash-2";
 import TriangleAlert from "lucide-react/icons/triangle-alert";
 import X from "lucide-react/icons/x";
 import { splitMentions } from "./notifications";
-import { describeTaskEvent, isClosedStatus, taskCode, taskPriorities, taskPriorityLabels, taskStatuses, taskStatusLabels, type TaskPriority, type TaskStatus } from "./tasks";
+import { describeTaskEvent, dueShortcuts, isClosedStatus, taskCode, taskDuePeriodLabels, taskPriorities, taskPriorityLabels, taskStatuses, taskStatusLabels, type TaskDuePeriod, type TaskPriority, type TaskStatus } from "./tasks";
 import ListChecks from "lucide-react/icons/list-checks";
 import Pencil from "lucide-react/icons/pencil";
 import { checklistProgress, type ChecklistItem } from "./checklists";
@@ -22,9 +22,14 @@ import { formatHours, parseEntryHours, type TimeEntry } from "./time-entries";
 import { TimerControl } from "./task-timer";
 import Link2 from "lucide-react/icons/link-2";
 import Lock from "lucide-react/icons/lock";
-import { type Task, type TaskClient, type Me, type TaskEvent, type Lookups, relativeTime, fullDate, postTask, StatusIcon, PriorityIcon, Avatar, DueChip, PeoplePicker, MentionTextarea } from "./task-shared";
+import { type Task, type TaskClient, type Me, type TaskEvent, type Lookups, relativeTime, fullDate, postTask, StatusIcon, Avatar, DueChip, PeoplePicker, MentionTextarea, SegmentedControl, todayInSaoPaulo } from "./task-shared";
 
-type Fields = Pick<Task, "status" | "priority" | "owners" | "support" | "teamId" | "clientId" | "projectId" | "category" | "startDate" | "dueDate" | "completedOn" | "estimatedHours" | "origin" | "sprintId">;
+const PRIORITY_OPTIONS: { value: TaskPriority; label: string; title: string }[] = [
+  { value: 0, label: "Sem", title: "Sem prioridade" }, { value: 4, label: "Baixa", title: "Prioridade baixa" }, { value: 3, label: "Média", title: "Prioridade média" }, { value: 2, label: "Alta", title: "Prioridade alta" }, { value: 1, label: "Crítica", title: "Prioridade crítica" },
+];
+const PERIOD_OPTIONS: { value: TaskDuePeriod | null; label: string }[] = [{ value: null, label: "Qualquer hora" }, { value: "morning", label: taskDuePeriodLabels.morning }, { value: "afternoon", label: taskDuePeriodLabels.afternoon }];
+
+type Fields = Pick<Task, "status" | "priority" | "owners" | "support" | "teamId" | "clientId" | "projectId" | "category" | "startDate" | "dueDate" | "duePeriod" | "completedOn" | "estimatedHours" | "origin" | "sprintId">;
 
 /** Campos da demanda; usado na criação e no painel lateral. Horas e textos salvam ao sair do campo. */
 function PropertyFields({ value, onChange, lookups, disabled, compact }: { value: Fields; onChange: (changes: Partial<Fields>) => void; lookups: Lookups; disabled?: boolean; compact?: boolean }) {
@@ -42,7 +47,7 @@ function PropertyFields({ value, onChange, lookups, disabled, compact }: { value
 
   return <div className={`task-fields ${compact ? "compact" : ""}`}>
     <label className="task-prop"><span>Status</span><span className="task-prop-control"><StatusIcon status={value.status} /><select disabled={disabled} value={value.status} onChange={(event) => onChange({ status: event.target.value as TaskStatus })}>{taskStatuses.map((status) => <option key={status} value={status}>{taskStatusLabels[status]}</option>)}</select></span></label>
-    <label className="task-prop"><span>Prioridade</span><span className="task-prop-control"><PriorityIcon priority={value.priority} /><select disabled={disabled} value={value.priority} onChange={(event) => onChange({ priority: Number(event.target.value) as TaskPriority })}>{taskPriorities.map((priority) => <option key={priority} value={priority}>{taskPriorityLabels[priority]}</option>)}</select></span></label>
+    <div className="task-prop task-prop-wide"><span>Prioridade</span><SegmentedControl label="Prioridade" value={value.priority} options={PRIORITY_OPTIONS} disabled={disabled} onChange={(priority) => onChange({ priority })} /></div>
     <PeoplePicker label="Responsáveis" value={value.owners} onChange={(owners) => onChange({ owners, support: value.support.filter((id) => !owners.includes(id)) })} members={lookups.members} disabled={disabled} />
     <PeoplePicker label="Resp. Suporte" value={value.support} onChange={(support) => onChange({ support })} members={lookups.members} exclude={value.owners} disabled={disabled} />
     <label className="task-prop"><span>Cliente / Projeto</span><span className="task-prop-control"><Building2 size={14} /><select disabled={disabled} value={value.clientId ?? ""} onChange={(event) => onChange({ clientId: event.target.value ? Number(event.target.value) : null })}><option value="">Sem cliente</option>{lookups.clients.filter((client) => client.active || client.id === value.clientId).map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></span></label>
@@ -51,7 +56,11 @@ function PropertyFields({ value, onChange, lookups, disabled, compact }: { value
     {lookups.projects.length > 0 && <label className="task-prop"><span>Projeto grande</span><span className="task-prop-control"><select disabled={disabled} value={value.projectId ?? ""} onChange={(event) => onChange({ projectId: event.target.value ? Number(event.target.value) : null })}><option value="">Nenhum</option>{lookups.projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></span></label>}
     {!compact && (lookups.sprints?.length || value.sprintId) ? <label className="task-prop"><span>Sprint</span><span className="task-prop-control"><select disabled={disabled} value={value.sprintId ?? ""} onChange={(event) => onChange({ sprintId: event.target.value ? Number(event.target.value) : null })}><option value="">Fora de sprint</option>{(lookups.sprints ?? []).map((sprint) => <option key={sprint.id} value={sprint.id}>{sprint.name}{sprint.status === "active" ? " (em andamento)" : ""}</option>)}{value.sprintId && !(lookups.sprints ?? []).some((sprint) => sprint.id === value.sprintId) ? <option value={value.sprintId}>Sprint encerrado</option> : null}</select></span></label> : null}
     {dateField("startDate", "Data de Início")}
-    {dateField("dueDate", "Prazo")}
+    <div className="task-due-field">
+      {dateField("dueDate", "Prazo")}
+      {!disabled && <div className="due-shortcuts" role="group" aria-label="Atalhos de prazo">{dueShortcuts(todayInSaoPaulo()).map((shortcut) => <button key={shortcut.label} type="button" className={value.dueDate === shortcut.value ? "active" : ""} aria-pressed={value.dueDate === shortcut.value} onClick={() => onChange({ dueDate: shortcut.value })}>{shortcut.label}</button>)}</div>}
+    </div>
+    {value.dueDate && <div className="task-prop task-prop-wide"><span>Período</span><SegmentedControl label="Período do prazo" value={value.duePeriod ?? null} options={PERIOD_OPTIONS} disabled={disabled} onChange={(duePeriod) => onChange({ duePeriod })} /></div>}
     {!compact && dateField("completedOn", "Data de Conclusão")}
     <div className="task-hours">
       <label className="task-prop"><span>Horas estimadas</span><span className="task-prop-control"><input disabled={disabled} inputMode="decimal" value={hours.estimatedHours} onChange={(event) => setHours({ ...hours, estimatedHours: event.target.value })} onBlur={() => commitHours("estimatedHours")} placeholder="0" /><small>h</small></span></label>
@@ -60,10 +69,10 @@ function PropertyFields({ value, onChange, lookups, disabled, compact }: { value
   </div>;
 }
 
-export function NewTaskModal({ initialStatus, lookups, meId, defaultTeamId, defaultClientId, onClose, onCreated }: { initialStatus: TaskStatus; lookups: Lookups; meId: number; defaultTeamId: number | null; defaultClientId: number | null; onClose: () => void; onCreated: (task: Task) => void }) {
+export function NewTaskModal({ initialStatus, initialDue = null, lookups, meId, defaultTeamId, defaultClientId, onClose, onCreated }: { initialStatus: TaskStatus; initialDue?: { dueDate: string; duePeriod: TaskDuePeriod | null } | null; lookups: Lookups; meId: number; defaultTeamId: number | null; defaultClientId: number | null; onClose: () => void; onCreated: (task: Task) => void }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [fields, setFields] = useState<Fields>({ status: initialStatus, priority: 0, owners: lookups.members.some((member) => member.id === meId) ? [meId] : [], support: [], teamId: defaultTeamId, clientId: defaultClientId, projectId: null, category: "", startDate: null, dueDate: null, completedOn: null, estimatedHours: null, origin: "" });
+  const [fields, setFields] = useState<Fields>({ status: initialStatus, priority: 0, owners: lookups.members.some((member) => member.id === meId) ? [meId] : [], support: [], teamId: defaultTeamId, clientId: defaultClientId, projectId: null, category: "", startDate: null, dueDate: initialDue?.dueDate ?? null, duePeriod: initialDue?.duePeriod ?? null, completedOn: null, estimatedHours: null, origin: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [templates, setTemplates] = useState<Template[]>([]);

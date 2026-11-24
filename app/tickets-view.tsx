@@ -36,6 +36,7 @@ import Columns3 from "lucide-react/icons/columns-3";
 import List from "lucide-react/icons/list";
 import MessageSquareText from "lucide-react/icons/message-square-text";
 import Pencil from "lucide-react/icons/pencil";
+import { SegmentedControl } from "./task-shared";
 import SlidersHorizontal from "lucide-react/icons/sliders-horizontal";
 import { fillReply, onTicketBoard, REPLY_FIELDS, repliesFor, TICKET_BOARD_STATUSES, type TicketBoardStatus } from "./team-tools";
 import { canHandleTicket, compareTickets, describeTicketEvent, formatMinutes, isActiveTicket, isTicketLate, parseStoredDate, resolutionHours, resolutionStatus, slaStatus, ticketCode, ticketJourney, ticketStatuses, ticketStatusLabels, ticketTypeLabels, ticketTypes, ticketUrgencies, ticketUrgencyLabels, type SlaState, type TicketEventKind, type TicketStatus, type TicketType, type TicketUrgency } from "./tickets";
@@ -385,7 +386,7 @@ function NewTicketModal({ teams, tickets, defaultTeamId, onClose, onCreated, onO
       {(suggestions.articles.length > 0 || suggestions.tickets.length > 0) && <div className="full"><SimilarSuggestions title="Antes de abrir, veja se isso já resolve" articles={suggestions.articles} tickets={suggestions.tickets} onOpenArticle={onOpenArticle} onOpenTicket={onOpenTicket} /></div>}
       {teams.length > 0 && <label><span>Para qual time?</span><select required value={teamId} onChange={(event) => setTeamId(event.target.value)}><option value="" disabled>Escolha o time</option>{teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}</select></label>}
       <label><span>Tipo</span><select value={type} onChange={(event) => setType(event.target.value as TicketType)}>{ticketTypes.map((value) => <option key={value} value={value}>{ticketTypeLabels[value]}</option>)}</select></label>
-      <label><span>Urgência</span><select value={urgency} onChange={(event) => setUrgency(event.target.value as TicketUrgency)}>{ticketUrgencies.map((value) => <option key={value} value={value}>{ticketUrgencyLabels[value]}</option>)}</select><small>{{ critical: "Primeira resposta em até 2 h.", high: "Primeira resposta em até 8 h.", normal: "Primeira resposta em até 24 h.", low: "Primeira resposta em até 72 h." }[urgency]}</small></label>
+      <div className="modal-field"><span>Urgência</span><SegmentedControl label="Urgência" value={urgency} options={ticketUrgencies.map((value) => ({ value, label: ticketUrgencyLabels[value] }))} onChange={setUrgency} /><small>{{ critical: "Primeira resposta em até 2 h.", high: "Primeira resposta em até 8 h.", normal: "Primeira resposta em até 24 h.", low: "Primeira resposta em até 72 h." }[urgency]}</small></div>
       <label><span>Cliente afetado <em>opcional</em></span><input maxLength={80} value={client} onChange={(event) => setClient(event.target.value)} placeholder="Ex.: Clínica São Lucas" /></label>
       <label className="full"><span>Detalhes</span><textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Passo a passo, mensagem de erro, prints ou links que ajudem o time a resolver." /></label>
     </div>

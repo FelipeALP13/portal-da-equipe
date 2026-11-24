@@ -288,6 +288,13 @@
       "when": 1795116626279,
       "tag": "0040_requests_and_standups",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1795465914464,
+      "tag": "0041_task_due_period",
+      "breakpoints": true
     }
   ]
 }

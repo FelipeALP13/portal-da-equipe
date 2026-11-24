@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLiveRefresh } from "./live";
 import Building2 from "lucide-react/icons/building-2";
 import ChevronDown from "lucide-react/icons/chevron-down";
+import CalendarDays from "lucide-react/icons/calendar-days";
 import Columns3 from "lucide-react/icons/columns-3";
 import FileSpreadsheet from "lucide-react/icons/file-spreadsheet";
 import LayoutList from "lucide-react/icons/layout-list";
@@ -14,7 +15,7 @@ import Search from "lucide-react/icons/search";
 import TriangleAlert from "lucide-react/icons/triangle-alert";
 import X from "lucide-react/icons/x";
 import Lock from "lucide-react/icons/lock";
-import { dueState, isClosedStatus, sortOrderBetween, taskCode, taskPriorities, taskPriorityLabels, taskStatuses, taskStatusLabels, type TaskPriority, type TaskStatus } from "./tasks";
+import { dueState, isClosedStatus, sortOrderBetween, taskCode, taskPriorities, taskPriorityLabels, taskStatuses, taskStatusLabels, type TaskDuePeriod, type TaskPriority, type TaskStatus } from "./tasks";
 import ImportModal from "./import-modal";
 import Download from "lucide-react/icons/download";
 import { MoreMenu } from "./more-menu";
@@ -23,11 +24,13 @@ import ListChecks from "lucide-react/icons/list-checks";
 import SlidersHorizontal from "lucide-react/icons/sliders-horizontal";
 import { type Task, type TaskTeam, type TasksData, type Lookups, boardStatuses, BOARD_DONE_LIMIT, todayInSaoPaulo, fold, postTask, StatusIcon, PriorityIcon, TeamChip, AvatarStack, DueChip } from "./task-shared";
 import { NewTaskModal, TaskDrawer, TemplatesModal, ClientsModal } from "./task-drawer";
+import { TaskWeek } from "./task-week";
 
 type Filters = { scope: "all" | "mine" | "team"; person: string; priority: string; team: string; client: string; category: string; search: string };
 
-function readView(): "list" | "board" {
-  try { return window.localStorage.getItem("tasks-view") === "board" ? "board" : "list"; } catch { return "list"; }
+type TasksLayout = "list" | "board" | "week";
+function readView(): TasksLayout {
+  try { const saved = window.localStorage.getItem("tasks-view"); return saved === "board" || saved === "week" ? saved : "list"; } catch { return "list"; }
 }
 
 /** Demanda esperando outras terminarem. */
@@ -41,7 +44,8 @@ export default function TasksView({ openRequest = null, onOpenRequestHandled, cr
   const [data, setData] = useState<TasksData | null>(null);
   const [error, setError] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [view, setView] = useState<"list" | "board">("list");
+  const [view, setView] = useState<TasksLayout>("list");
+  const [creatingDue, setCreatingDue] = useState<{ dueDate: string; duePeriod: TaskDuePeriod | null } | null>(null);
   const [filters, setFilters] = useState<Filters>({ scope: "all", person: "", priority: "", team: "", client: "", category: "", search: "" });
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ done: true, canceled: true });
   const [creating, setCreating] = useState<TaskStatus | null>(null);
@@ -110,7 +114,7 @@ export default function TasksView({ openRequest = null, onOpenRequestHandled, cr
     return () => window.removeEventListener("keydown", onKey);
   }, [data, creating, openTaskId, importing]);
 
-  function changeView(next: "list" | "board") {
+  function changeView(next: TasksLayout) {
     setView(next);
     try { window.localStorage.setItem("tasks-view", next); } catch { /* preferência opcional */ }
   }
@@ -243,6 +247,7 @@ export default function TasksView({ openRequest = null, onOpenRequestHandled, cr
       <div className="tasks-view-toggle" role="group" aria-label="Visualização">
         <button className={view === "list" ? "active" : ""} aria-pressed={view === "list"} onClick={() => changeView("list")} title="Lista"><LayoutList size={15} /><span>Lista</span></button>
         <button className={view === "board" ? "active" : ""} aria-pressed={view === "board"} onClick={() => changeView("board")} title="Quadro"><Columns3 size={15} /><span>Quadro</span></button>
+        <button className={view === "week" ? "active" : ""} aria-pressed={view === "week"} aria-label="Semana" onClick={() => changeView("week")} title="Semana"><CalendarDays size={15} /><span>Semana</span></button>
       </div>
       <button type="button" className={`filters-toggle ${filtersOpen ? "active" : ""}`} aria-expanded={filtersOpen} aria-controls="demandas-filtros" onClick={() => setFiltersOpen((open) => !open)}><SlidersHorizontal size={16} /> Filtros{activeFilters > 0 && <b>{activeFilters}</b>}</button>
       <MoreMenu actions={[
@@ -322,11 +327,13 @@ export default function TasksView({ openRequest = null, onOpenRequestHandled, cr
           </section>;
         })}
       </div>
+    ) : view === "week" ? (
+      <TaskWeek tasks={visible} lookups={lookups} canEdit={data.me.canEdit} today={today} onOpen={setOpenTaskId} onReschedule={(taskId, dueDate, duePeriod) => void update(taskId, { dueDate, duePeriod })} onCreate={(dueDate, duePeriod) => { setCreatingDue({ dueDate, duePeriod }); setCreating("todo"); }} />
     ) : (
       <Board byStatus={byStatus} lookups={lookups} teamsById={teamsById} canEdit={data.me.canEdit} today={today} onOpen={setOpenTaskId} onMove={moveTask} onCreate={setCreating} />
     )}
 
-    {creating && data && <NewTaskModal initialStatus={creating} lookups={lookups} meId={data.me.id} defaultTeamId={filters.team && filters.team !== "none" ? Number(filters.team) : data.me.teamIds.length === 1 ? data.me.teamIds[0] : null} defaultClientId={filters.client ? Number(filters.client) : null} onClose={() => setCreating(null)} onCreated={async (task) => { setCreating(null); await load(); setOpenTaskId(task.id); }} />}
+    {creating && data && <NewTaskModal initialStatus={creating} initialDue={creatingDue} lookups={lookups} meId={data.me.id} defaultTeamId={filters.team && filters.team !== "none" ? Number(filters.team) : data.me.teamIds.length === 1 ? data.me.teamIds[0] : null} defaultClientId={filters.client ? Number(filters.client) : null} onClose={() => { setCreating(null); setCreatingDue(null); }} onCreated={async (task) => { setCreating(null); setCreatingDue(null); await load(); setOpenTaskId(task.id); }} />}
     {openTask && data && <TaskDrawer key={openTask.id} task={openTask} allTasks={data.tasks} onOpenTask={setOpenTaskId} lookups={lookups} me={data.me} today={today} onClose={() => setOpenTaskId(null)} onUpdate={(changes) => update(openTask.id, changes)} onDeleted={async () => { setOpenTaskId(null); await load(); }} onCommented={load} />}
     {importing && <ImportModal onClose={() => setImporting(false)} onImported={load} />}
     {managingTemplates && <TemplatesModal lookups={lookups} onClose={() => setManagingTemplates(false)} />}

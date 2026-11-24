@@ -7,7 +7,7 @@ import { commentRecipients, findMentions, snippet, type NotificationKind } from 
 import { getSessionMember, type SessionMember } from "../../auth-session";
 import { writeAudit } from "../../audit";
 import { hasTrustedOrigin } from "../../request-security";
-import { cleanMultiline, cleanTitle, isClosedStatus, isTaskPriority, isTaskStatus, MAX_COMMENT_LENGTH, MAX_DESCRIPTION_LENGTH, parseDueDate, sortOrderBetween, taskCategories, taskCode, taskStatusLabels, type TaskEventKind, type TaskStatus } from "../../tasks";
+import { cleanMultiline, cleanTitle, isClosedStatus, isTaskPriority, isTaskStatus, MAX_COMMENT_LENGTH, MAX_DESCRIPTION_LENGTH, parseDueDate, sortOrderBetween, taskCategories, taskCode, taskStatusLabels, type TaskEventKind, type TaskStatus, parseDuePeriod } from "../../tasks";
 import { readJsonBody } from "../../api-input";
 import { removeAttachmentsOf } from "../../attachments-store";
 import { sprints, taskDependencies, taskRecurrences } from "../../../db/schema";
@@ -226,6 +226,7 @@ export async function GET(request: Request) {
         openedOn: tasks.openedOn,
         startDate: tasks.startDate,
         dueDate: tasks.dueDate,
+        duePeriod: tasks.duePeriod,
         completedOn: tasks.completedOn,
         estimatedHours: tasks.estimatedHours,
         workedHours: tasks.workedHours,
@@ -386,6 +387,8 @@ export async function POST(request: Request) {
       const estimatedHours = parseHoursField(body.estimatedHours);
       if (!title) return json({ error: "Dê um título para a demanda." }, 400);
       if (dates.startDate === undefined || dates.dueDate === undefined) return json({ error: "Informe datas válidas." }, 400);
+      const duePeriod = parseDuePeriod(body.duePeriod);
+      if (duePeriod === undefined) return json({ error: "Escolha um período válido." }, 400);
       if (ownersList === undefined || supportList === undefined) return json({ error: "Escolha responsáveis ativos." }, 400);
       if (team === undefined) return json({ error: "Escolha um time válido." }, 400);
       if (client === undefined) return json({ error: "Escolha um cliente/projeto válido." }, 400);
@@ -405,6 +408,7 @@ export async function POST(request: Request) {
         openedOn: today,
         startDate: dates.startDate,
         dueDate: dates.dueDate,
+        duePeriod: dates.dueDate ? duePeriod : null,
         completedOn: status === "done" ? today : null,
         estimatedHours,
         origin: cleanTitle(body.origin).slice(0, 300),
@@ -520,6 +524,13 @@ export async function POST(request: Request) {
           changes[field] = value;
           if (field === "dueDate") events.push({ kind: "due_date", body: value ?? "" });
         }
+      }
+      if ("duePeriod" in body || changes.dueDate === null) {
+        const duePeriod = parseDuePeriod(body.duePeriod);
+        if (duePeriod === undefined) return json({ error: "Escolha um período válido." }, 400);
+        const nextDue = "dueDate" in changes ? changes.dueDate : current.dueDate;
+        const nextPeriod = nextDue ? duePeriod : null;
+        if (nextPeriod !== current.duePeriod) changes.duePeriod = nextPeriod;
       }
       // Horas trabalhadas não se digitam: são as horas anteriores (editáveis) + os lançamentos.
       for (const field of ["estimatedHours", "baseHours"] as const) {

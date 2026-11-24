@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { cleanMultiline, cleanTitle, describeTaskEvent, dueState, isTaskPriority, isTaskStatus, parseDueDate, sortOrderBetween, taskCode } from "../app/tasks.ts";
+import { addDaysIso, cleanMultiline, dueShortcuts, parseDuePeriod, weekDays, weekStart, cleanTitle, describeTaskEvent, dueState, isTaskPriority, isTaskStatus, parseDueDate, sortOrderBetween, taskCode } from "../app/tasks.ts";
 
 test("gera o código da tarefa", () => {
   assert.equal(taskCode(12), "DEM-12");
@@ -50,4 +50,19 @@ test("descreve as mudanças no histórico", () => {
   assert.equal(describeTaskEvent("due_date", "2026-11-20"), "definiu o prazo para 20/11");
   assert.equal(describeTaskEvent("team", "Suporte"), "moveu para o time Suporte");
   assert.equal(describeTaskEvent("team", ""), "removeu o time");
+});
+
+test("semana e atalhos de prazo usam datas puras", () => {
+  assert.equal(weekStart("2026-11-23"), "2026-11-23");
+  assert.equal(weekStart("2026-11-29"), "2026-11-23");
+  assert.deepEqual(weekDays("2026-12-28").slice(-2), ["2027-01-02", "2027-01-03"]);
+  assert.equal(addDaysIso("2026-02-28", 1), "2026-03-01");
+  assert.deepEqual(dueShortcuts("2026-11-23").map((item) => item.value), ["2026-11-23", "2026-11-24", "2026-11-30"]);
+});
+
+test("período do prazo aceita só manhã, tarde ou vazio", () => {
+  assert.equal(parseDuePeriod("morning"), "morning");
+  assert.equal(parseDuePeriod(""), null);
+  assert.equal(parseDuePeriod(null), null);
+  assert.equal(parseDuePeriod("noite"), undefined);
 });

@@ -208,6 +208,8 @@ export const tasks = sqliteTable("tasks", {
   openedOn: text("opened_on"),
   startDate: text("start_date"),
   dueDate: text("due_date"),
+  // Período do prazo na visão Semana: morning, afternoon ou vazio (qualquer hora).
+  duePeriod: text("due_period"),
   completedOn: text("completed_on"),
   estimatedHours: real("estimated_hours"),
   // Total = horas anteriores (planilha ou digitadas antes do apontamento) + lançamentos de horas.

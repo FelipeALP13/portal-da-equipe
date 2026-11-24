@@ -79,6 +79,28 @@ export function sortOrderBetween(before: number | null, after: number | null) {
   return (before + after) / 2;
 }
 
+export const taskDuePeriods = ["morning", "afternoon"] as const;
+export type TaskDuePeriod = (typeof taskDuePeriods)[number];
+export const taskDuePeriodLabels: Record<TaskDuePeriod, string> = { morning: "Manhã", afternoon: "Tarde" };
+
+/** Período do prazo vindo da tela: null é "qualquer hora"; undefined é valor inválido. */
+export function parseDuePeriod(value: unknown): TaskDuePeriod | null | undefined {
+  if (value === null || value === undefined || value === "") return null;
+  return taskDuePeriods.includes(value as TaskDuePeriod) ? value as TaskDuePeriod : undefined;
+}
+
+/** Soma dias a uma data AAAA-MM-DD, sem depender do fuso do aparelho. */
+export function addDaysIso(date: string, days: number) {
+  const value = new Date(`${date}T12:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
+/** Segunda-feira da semana da data. */
+export const weekStart = (date: string) => addDaysIso(date, -((new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7));
+export const weekDays = (start: string) => Array.from({ length: 7 }, (_, index) => addDaysIso(start, index));
+export const dueShortcuts = (today: string) => [{ label: "Hoje", value: today }, { label: "Amanhã", value: addDaysIso(today, 1) }, { label: "+1 semana", value: addDaysIso(today, 7) }];
+
 export type DueState = "overdue" | "today" | "soon" | "later";
 
 /** Situação do prazo em relação a hoje (datas AAAA-MM-DD). */
