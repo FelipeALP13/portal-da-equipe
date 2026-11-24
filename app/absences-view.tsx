@@ -9,6 +9,7 @@ import X from "lucide-react/icons/x";
 import { absenceKindLabels, absenceKinds, daysBetween, describeAbsence, splitAbsences, type AbsenceKind } from "./absences";
 import { Avatar } from "./tasks-view";
 import { absencesChanged, useAbsences, type AbsenceRequest, type LoadedAbsence } from "./use-absences";
+import { askConfirm, askText } from "./confirm-dialog";
 
 type Person = { id: number; name: string; active: boolean; avatarIcon: string; avatarKey: string | null };
 
@@ -37,7 +38,7 @@ export default function AbsencesView({ people }: { people: Person[] }) {
 
   async function remove(absence: LoadedAbsence) {
     const name = byId.get(absence.memberId)?.name ?? "a pessoa";
-    if (!window.confirm(`Excluir ${describeAbsence(absence, today).toLowerCase()} de ${name}?`)) return;
+    if (!await askConfirm(`Excluir ${describeAbsence(absence, today).toLowerCase()} de ${name}?`)) return;
     setError("");
     try {
       await post({ action: "deleteAbsence", absenceId: absence.id });
@@ -49,7 +50,7 @@ export default function AbsencesView({ people }: { people: Person[] }) {
 
   async function decide(request: AbsenceRequest, approve: boolean) {
     const name = byId.get(request.memberId)?.name ?? "a pessoa";
-    const note = approve ? "" : window.prompt(`Recusar o pedido de ${name}? Se quiser, escreva o motivo (vai junto no aviso).`, "");
+    const note = approve ? "" : await askText(`Recusar o pedido de ${name}? Se quiser, escreva o motivo (vai junto no aviso).`);
     if (note === null) return;
     setError("");
     try {

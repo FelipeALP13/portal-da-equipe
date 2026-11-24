@@ -11,6 +11,7 @@ import Trash2 from "lucide-react/icons/trash-2";
 import X from "lucide-react/icons/x";
 import { assetStatusLabels, daysBetween, type AssetStatus } from "./people-tools";
 import { Avatar, relativeTime } from "./task-shared";
+import { askConfirm } from "./confirm-dialog";
 
 type Person = { id: number; name: string; avatarIcon: string; avatarKey: string | null; active: boolean };
 type Asset = { id: number; kind: "equipment" | "license"; name: string; category: string; identifier: string; status: AssetStatus; seats: number; purchaseDate: string | null; expiresOn: string | null; cost: number | null; notes: string; memberIds: number[]; events: { id: number; text: string; byName: string; at: string }[] };
@@ -68,7 +69,7 @@ export default function AssetsView() {
   ];
 
   async function remove(asset: Asset) {
-    if (!window.confirm(`Excluir “${asset.name}” e o histórico? Para guardar o histórico, prefira mudar a situação para “Baixado”.`)) return;
+    if (!await askConfirm(`Excluir “${asset.name}” e o histórico? Para guardar o histórico, prefira mudar a situação para “Baixado”.`)) return;
     try { await call({ action: "deleteAsset", assetId: asset.id }); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); }
   }
 

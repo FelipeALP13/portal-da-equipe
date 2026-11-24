@@ -264,5 +264,6 @@ html[data-theme="dark"] { --chart-grid: #263244; --chart-baseline: #495669; }
 :where(html[data-theme="dark"]) .cropper-view.circle .cropper-frame { box-shadow: 0 0 0 9999px rgba(15, 23, 42, .5), inset 0 0 0 2px rgba(19, 27, 40, .9); }
 :where(html[data-theme="dark"]) .glass-menu .gn-scope { --gn-edge-light: #1a2028; --gn-shadow: #d6dce9; }
 html[data-theme="dark"][data-theme="dark"] .glass-menu .gn-scope { --gn-shadow: #ebebeb; }
+:where(html[data-theme="dark"]) .primary-button.danger-button { color: #ffffff; }
 html[data-theme="dark"] { --canvas: #0d141f; }
 :where(html[data-theme="dark"]) body { background: #0d141f; }

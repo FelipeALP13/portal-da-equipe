@@ -10,6 +10,7 @@ import { ticketCode, ticketStatusLabels, ticketUrgencyLabels, type TicketStatus,
 import { relativeTime } from "./task-shared";
 import { MAX_HANDOFF } from "./team-tools";
 import { scheduleDate } from "./dashboard-shared";
+import { askConfirm } from "./confirm-dialog";
 
 type Side = { weekId: number; start: string; end: string; teamName: string; color: string; members: string[] } | null;
 type Handoff = { id: number; teamName: string; body: string; createdByName: string; createdAt: string; canDelete: boolean; readBy: string[]; readByMe: boolean };
@@ -85,10 +86,10 @@ export default function HandoffPanel() {
     {error && <p className="modal-error">{error}</p>}
     {notice && !error && <p className="time-log-notice">{notice}</p>}
 
-    {latest ? <HandoffItem item={latest} busy={busy} highlight={!latest.readByMe} onRead={() => void run(async () => { await post({ action: "markRead", handoffId: latest.id }); })} onDelete={() => { if (window.confirm("Excluir esta passagem de plantão?")) void run(async () => { await post({ action: "deleteHandoff", handoffId: latest.id }); }); }} />
+    {latest ? <HandoffItem item={latest} busy={busy} highlight={!latest.readByMe} onRead={() => void run(async () => { await post({ action: "markRead", handoffId: latest.id }); })} onDelete={async () => { if (await askConfirm("Excluir esta passagem de plantão?")) void run(async () => { await post({ action: "deleteHandoff", handoffId: latest.id }); }); }} />
       : !writing && <p className="muted handoff-empty">Nenhuma passagem registrada ainda. No fim da semana, quem está no atendimento conta o que ficou pendente.</p>}
     {older.length > 0 && <button className="link-button" onClick={() => setShowOlder((value) => !value)}>{showOlder ? "Esconder anteriores" : `Ver ${older.length} anteriores`}</button>}
-    {showOlder && older.map((item) => <HandoffItem key={item.id} item={item} busy={busy} highlight={false} onRead={() => void run(async () => { await post({ action: "markRead", handoffId: item.id }); })} onDelete={() => { if (window.confirm("Excluir esta passagem de plantão?")) void run(async () => { await post({ action: "deleteHandoff", handoffId: item.id }); }); }} />)}
+    {showOlder && older.map((item) => <HandoffItem key={item.id} item={item} busy={busy} highlight={false} onRead={() => void run(async () => { await post({ action: "markRead", handoffId: item.id }); })} onDelete={async () => { if (await askConfirm("Excluir esta passagem de plantão?")) void run(async () => { await post({ action: "deleteHandoff", handoffId: item.id }); }); }} />)}
   </section>;
 }
 

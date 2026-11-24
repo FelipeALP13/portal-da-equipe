@@ -11,6 +11,7 @@ import Search from "lucide-react/icons/search";
 import X from "lucide-react/icons/x";
 import { call, ChannelMark, fold, MyStatus, PersonAvatar, shortWhen, statusText, Thread, type ChannelInfo, type Me, type Person } from "./chat-thread";
 import { Avatar } from "./task-shared";
+import { askConfirm } from "./confirm-dialog";
 
 export type Conversation = { id: number; kind: "channel" | "dm"; name: string; topic: string; teamId: number | null; peerId: number | null; archived: boolean; lastMessageAt: string | null; createdByName: string; canManage: boolean; unread: number; topicId: number | null; preview: { authorName: string; text: string; at: string } | null };
 export type ChatList = { channels: Conversation[]; people: Person[]; me: Me };
@@ -172,7 +173,7 @@ export default function CommunityView({ openChannel }: { openChannel?: number | 
       {topicId ? <Thread key={topicId} topicId={topicId} focus={focus} people={list.people} me={list.me} onChanged={() => void load()} onBack={() => setMobileChat(false)}
         actions={(channel) => channel.canManage && channel.kind === "channel" ? <span className="cv-thread-actions">
           <button className="cv-icon-button" onClick={() => setEditing(channel)} aria-label="Editar canal" title="Editar canal"><Pencil size={16} /></button>
-          <button className="cv-icon-button" onClick={() => { if (channel.archived || window.confirm(`Arquivar /${channel.name}? Ninguém mais escreve nele, mas o histórico continua.`)) void call("/api/chat", { action: channel.archived ? "restoreChannel" : "archiveChannel", channelId: channel.id }).then(load); }} aria-label={channel.archived ? "Restaurar canal" : "Arquivar canal"} title={channel.archived ? "Restaurar canal" : "Arquivar canal"}>{channel.archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}</button>
+          <button className="cv-icon-button" onClick={async () => { if (channel.archived || await askConfirm(`Arquivar /${channel.name}? Ninguém mais escreve nele, mas o histórico continua.`)) void call("/api/chat", { action: channel.archived ? "restoreChannel" : "archiveChannel", channelId: channel.id }).then(load); }} aria-label={channel.archived ? "Restaurar canal" : "Arquivar canal"} title={channel.archived ? "Restaurar canal" : "Arquivar canal"}>{channel.archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}</button>
         </span> : null} />
         : <div className="cv-loading"><div className="loading-list"><span /></div></div>}
     </main>

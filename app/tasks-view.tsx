@@ -40,7 +40,7 @@ function WaitingChip({ count }: { count: number }) {
 
 const involves = (task: Task, memberId: number) => task.owners.includes(memberId) || task.support.includes(memberId);
 
-export default function TasksView({ openRequest = null, onOpenRequestHandled, createRequest = 0 }: { openRequest?: number | null; onOpenRequestHandled?: () => void; createRequest?: number }) {
+export default function TasksView({ openRequest = null, onOpenRequestHandled, createRequest = 0, onCreateRequestHandled }: { openRequest?: number | null; onOpenRequestHandled?: () => void; createRequest?: number; onCreateRequestHandled?: () => void }) {
   const [data, setData] = useState<TasksData | null>(null);
   const [error, setError] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -78,11 +78,13 @@ export default function TasksView({ openRequest = null, onOpenRequestHandled, cr
   // Atalho "Nova demanda" da visão geral: abre o formulário assim que a lista carregar.
   const handledCreate = useRef(0);
   useEffect(() => {
-    if (!createRequest || !data?.me.canEdit || handledCreate.current === createRequest) return;
+    if (!createRequest) { handledCreate.current = 0; return; }
+    if (!data?.me.canEdit || handledCreate.current === createRequest) return;
     handledCreate.current = createRequest;
-    const timer = window.setTimeout(() => setCreating("todo"), 0);
+    // Atende o pedido uma vez e avisa a tela principal para apagá-lo: ao sair e voltar, a janela não abre de novo.
+    const timer = window.setTimeout(() => { setCreating("todo"); onCreateRequestHandled?.(); }, 0);
     return () => window.clearTimeout(timer);
-  }, [createRequest, data]);
+  }, [createRequest, data, onCreateRequestHandled]);
 
   // Pedido vindo do sininho ou da visão geral para abrir uma demanda específica.
   useEffect(() => {

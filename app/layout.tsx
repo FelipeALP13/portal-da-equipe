@@ -6,6 +6,7 @@ import "./dark-theme.css";
 import { APP_DESCRIPTION } from "./brand";
 import PwaRegister from "./pwa-register";
 import ModalAccessibility from "./modal-accessibility";
+import ConfirmHost from "./confirm-dialog";
 import { THEME_BOOT_SCRIPT } from "./theme";
 import { loadBrand } from "./brand-store";
 import { DEFAULT_BRAND_COLOR, brandCss, brandIconUrl, brandLogoUrl, brandPalette } from "./brand-theme";
@@ -46,7 +47,7 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <style id={BRAND_STYLE_ID} dangerouslySetInnerHTML={{ __html: brandCss(brand.color) }} />
       </head>
-      <body><BrandProvider initial={initial}>{children}</BrandProvider><PwaRegister /><ModalAccessibility /></body>
+      <body><BrandProvider initial={initial}>{children}</BrandProvider><PwaRegister /><ModalAccessibility /><ConfirmHost /></body>
     </html>
   );
 }

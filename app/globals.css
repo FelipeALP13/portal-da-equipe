@@ -1719,9 +1719,9 @@ mark.mention { padding: 0 2px; border-radius: 4px; color: var(--brand-text); bac
 .hub-stat.is-warn .hub-stat-icon { color: var(--warning-text); background: var(--warning-soft); }
 .hub-stat.is-warn .hub-stat-body em { color: var(--warning-text); font-weight: 700; }
 .notice-board.empty { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
-.notice-board.empty p { flex: 1; margin: 0; color: var(--text-faint); font-size: var(--fs-base); }
-.notice-board.empty svg { color: var(--text-faint); }
-.notice-board.empty button { display: inline-flex; align-items: center; gap: 4px; border: 0; color: var(--brand-text); background: transparent; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
+.notice-board.empty > p { flex: 1; margin: 0; color: var(--text-faint); font-size: var(--fs-base); }
+.notice-board.empty > svg { color: var(--text-faint); }
+.notice-board.empty > button { display: inline-flex; align-items: center; gap: 4px; border: 0; color: var(--brand-text); background: transparent; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
 .hub-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .hub-actions .primary-button, .hub-actions .secondary-button { height: 40px; }
 .hub-actions kbd { margin-left: 4px; padding: 1px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: var(--radius-sm); color: var(--text-muted); background: var(--surface-alt); font-family: inherit; font-size: var(--fs-xs); font-weight: 700; }
@@ -1970,7 +1970,7 @@ main { margin-left: 72px; }
 /* Visão geral: minha agenda de hoje */
 .hub-agenda.empty { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--radius-md); color: var(--text-faint); background: var(--surface); font-size: var(--fs-base); }
 .hub-agenda.empty span { flex: 1; }
-.hub-agenda.empty button { border: 0; color: var(--brand-text); background: transparent; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
+.hub-agenda.empty > button { border: 0; color: var(--brand-text); background: transparent; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
 .hub-agenda ul { display: flex; flex-direction: column; gap: 2px; margin: 10px 0 0; padding: 0; list-style: none; }
 .hub-agenda li { display: flex; align-items: center; gap: 8px; border-radius: var(--radius); }
 .hub-agenda li > button { display: flex; flex: 1; min-width: 0; align-items: center; gap: 10px; padding: 7px 8px; border: 0; border-radius: var(--radius); color: var(--ink); background: transparent; font-size: var(--fs-base); text-align: left; cursor: pointer; }
@@ -4527,3 +4527,17 @@ html[data-theme="dark"] .filters button.active { color: var(--on-brand); backgro
 }
 .task-drawer-side .segmented { flex-wrap: wrap; }
 .task-drawer-side .segmented button { flex: 1 1 auto; min-width: max-content; padding: 0 7px; font-size: var(--fs-2xs); }
+
+/* Janelas de confirmação (app/confirm-dialog.tsx), no lugar das caixas do navegador. */
+.confirm-layer { z-index: 120; }
+.modal.confirm-modal { width: min(440px, 100%); overflow: visible; }
+.confirm-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; padding: 22px 24px 18px; }
+.confirm-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: var(--radius); color: var(--brand-text); background: var(--brand-soft); }
+.confirm-modal.danger .confirm-icon { color: var(--danger-text); background: var(--danger-soft); }
+.confirm-body h2 { margin: 2px 0 0; font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 600; line-height: 1.3; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.confirm-body p { margin: 6px 0 0; color: var(--text-muted); font-size: var(--fs-sm); line-height: 1.5; overflow-wrap: anywhere; }
+.confirm-body textarea { width: 100%; margin-top: 12px; resize: vertical; }
+.confirm-modal .modal-actions { position: static; border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
+.primary-button.danger-button { border-color: var(--danger-solid); color: #fff; background: var(--danger-solid); }
+.primary-button.danger-button:hover:not(:disabled) { border-color: var(--danger-text); background: var(--danger-text); }
+@media (max-width: 560px) { .confirm-body { padding: 18px 18px 14px; } .confirm-icon { width: 34px; height: 34px; } }

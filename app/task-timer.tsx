@@ -7,6 +7,7 @@ import Timer from "lucide-react/icons/timer";
 import TriangleAlert from "lucide-react/icons/triangle-alert";
 import { taskCode } from "./tasks";
 import { TIMER_SUSPICIOUS_HOURS, timerClock, timerMinutes, timerSuggestion } from "./team-tools";
+import { askConfirm } from "./confirm-dialog";
 
 export type RunningTimer = { taskId: number; startedAt: string; title: string };
 
@@ -96,7 +97,7 @@ export function TimerControl({ taskId, canEdit, onLogged }: { taskId: number; ca
       <input aria-label="O que foi feito" className="time-log-note" maxLength={300} placeholder="O que foi feito (opcional)" value={stopping.note} onChange={(event) => setStopping({ ...stopping, note: event.target.value })} />
       <button className="primary-button" disabled={busy || !stopping.hours.trim()}>{busy ? "Lançando..." : "Lançar"}</button>
       <button type="button" className="secondary-button" disabled={busy} onClick={() => setStopping(null)}>Continuar contando</button>
-      <button type="button" className="link-button danger" disabled={busy} onClick={() => { if (window.confirm("Descartar o tempo do cronômetro sem lançar?")) void run(async () => { await post({ action: "discardTimer" }); setStopping(null); }); }}>Descartar</button>
+      <button type="button" className="link-button danger" disabled={busy} onClick={async () => { if (await askConfirm("Descartar o tempo do cronômetro sem lançar?")) void run(async () => { await post({ action: "discardTimer" }); setStopping(null); }); }}>Descartar</button>
     </form>}
     {error && <p className="modal-error">{error}</p>}
   </div>;

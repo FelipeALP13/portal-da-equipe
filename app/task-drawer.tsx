@@ -23,6 +23,7 @@ import { TimerControl } from "./task-timer";
 import Link2 from "lucide-react/icons/link-2";
 import Lock from "lucide-react/icons/lock";
 import { type Task, type TaskClient, type Me, type TaskEvent, type Lookups, relativeTime, fullDate, postTask, StatusIcon, Avatar, DueChip, PeoplePicker, MentionTextarea, SegmentedControl, todayInSaoPaulo } from "./task-shared";
+import { askConfirm } from "./confirm-dialog";
 
 const PRIORITY_OPTIONS: { value: TaskPriority; label: string; title: string }[] = [
   { value: 0, label: "Sem", title: "Sem prioridade" }, { value: 4, label: "Baixa", title: "Prioridade baixa" }, { value: 3, label: "Média", title: "Prioridade média" }, { value: 2, label: "Alta", title: "Prioridade alta" }, { value: 1, label: "Crítica", title: "Prioridade crítica" },
@@ -123,9 +124,9 @@ export function NewTaskModal({ initialStatus, initialDue = null, lookups, meId, 
 
   // Fechar com algo digitado pede confirmação (antes, Esc ou clique fora descartavam tudo sem avisar).
   const dirty = Boolean(title.trim() || description.trim() || steps.trim());
-  const requestClose = useCallback(() => {
+  const requestClose = useCallback(async () => {
     if (saving) return;
-    if (dirty && !window.confirm("Descartar esta demanda? O que você digitou será perdido.")) return;
+    if (dirty && !await askConfirm("Descartar esta demanda? O que você digitou será perdido.")) return;
     onClose();
   }, [saving, dirty, onClose]);
 
@@ -212,7 +213,7 @@ export function TaskDrawer({ task, allTasks = [], onOpenTask, lookups, me, today
   }
 
   async function removeComment(eventId: number) {
-    if (!window.confirm("Excluir este comentário?")) return;
+    if (!await askConfirm("Excluir este comentário?")) return;
     try {
       await postTask({ action: "deleteComment", eventId });
       await Promise.all([loadEvents(), onCommented()]);
@@ -222,7 +223,7 @@ export function TaskDrawer({ task, allTasks = [], onOpenTask, lookups, me, today
   }
 
   async function removeTask() {
-    if (!window.confirm(`Excluir ${taskCode(task.id)} “${task.title}”? Os comentários também serão apagados. Esta ação não pode ser desfeita.`)) return;
+    if (!await askConfirm(`Excluir ${taskCode(task.id)} “${task.title}”? Os comentários também serão apagados. Esta ação não pode ser desfeita.`)) return;
     try {
       await postTask({ action: "deleteTask", taskId: task.id });
       onDeleted();
@@ -385,7 +386,7 @@ function ChecklistPanel({ taskId, items, canEdit, onChanged }: { taskId: number;
       {canEdit && <span className="checklist-tools">
         <button type="button" disabled={busy || index === 0} onClick={() => void run({ action: "updateChecklistItem", itemId: item.id, move: "up" })} aria-label="Subir passo" title="Subir">↑</button>
         <button type="button" disabled={busy || index === items.length - 1} onClick={() => void run({ action: "updateChecklistItem", itemId: item.id, move: "down" })} aria-label="Descer passo" title="Descer">↓</button>
-        <button type="button" disabled={busy} onClick={() => { if (window.confirm(`Apagar o passo “${item.text}”?`)) void run({ action: "deleteChecklistItem", itemId: item.id }); }} aria-label="Apagar passo" title="Apagar"><Trash2 size={12} /></button>
+        <button type="button" disabled={busy} onClick={async () => { if (await askConfirm(`Apagar o passo “${item.text}”?`)) void run({ action: "deleteChecklistItem", itemId: item.id }); }} aria-label="Apagar passo" title="Apagar"><Trash2 size={12} /></button>
       </span>}
     </li>)}</ul>
     {canEdit && <form className="checklist-add" onSubmit={add}><input value={text} maxLength={200} onChange={(event) => setText(event.target.value)} placeholder="Novo passo e Enter" aria-label="Novo passo" /><button className="secondary-button" disabled={busy || !text.trim()}><Plus size={13} /> Adicionar</button></form>}
@@ -433,7 +434,7 @@ export function TemplatesModal({ lookups, onClose }: { lookups: Lookups; onClose
       {!templates ? <div className="loading-list"><span /></div> : templates.length ? <ul className="templates-list">{templates.map((template) => <li key={template.id}>
         <div><strong>{template.name}</strong><small>{template.items.length} passos{template.category ? ` · ${template.category}` : ""}{template.teamId ? ` · ${lookups.teams.find((team) => team.id === template.teamId)?.name ?? ""}` : ""}</small></div>
         <button className="person-edit" onClick={() => setEditing(template)} aria-label={`Editar ${template.name}`} title="Editar"><Pencil size={14} /></button>
-        <button className="person-edit" onClick={async () => { if (!window.confirm(`Excluir o modelo “${template.name}”? As demandas já criadas não mudam.`)) return; try { await post({ action: "deleteTemplate", templateId: template.id }); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }} aria-label={`Excluir ${template.name}`} title="Excluir"><Trash2 size={14} /></button>
+        <button className="person-edit" onClick={async () => { if (!await askConfirm(`Excluir o modelo “${template.name}”? As demandas já criadas não mudam.`)) return; try { await post({ action: "deleteTemplate", templateId: template.id }); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }} aria-label={`Excluir ${template.name}`} title="Excluir"><Trash2 size={14} /></button>
       </li>)}</ul> : <p className="muted">Nenhum modelo ainda. Comece pelos exemplos (implantação de cliente, publicação de versão e novo colaborador) e ajuste ao jeito de vocês.</p>}
       <div className="templates-actions"><button className="primary-button" onClick={() => setEditing("new")}><Plus size={15} /> Novo modelo</button><button className="secondary-button" onClick={createExamples}><ListChecks size={15} /> Criar modelos de exemplo</button></div>
     </div>
@@ -517,7 +518,7 @@ function TimeLog({ task, me, lookups, today, onSaveBase, onChanged }: { task: Ta
   }
 
   async function remove(entry: LoggedEntry) {
-    if (!window.confirm(`Excluir o lançamento de ${formatHours(entry.hours)} de ${entry.memberName} em ${fullDate(entry.workDate)}?`)) return;
+    if (!await askConfirm(`Excluir o lançamento de ${formatHours(entry.hours)} de ${entry.memberName} em ${fullDate(entry.workDate)}?`)) return;
     setError(""); setNotice("");
     try {
       await post({ action: "deleteEntry", entryId: entry.id });

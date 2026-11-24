@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLiveRefresh } from "./live";
 import Check from "lucide-react/icons/check";
 import Megaphone from "lucide-react/icons/megaphone";
@@ -9,6 +10,7 @@ import Trash2 from "lucide-react/icons/trash-2";
 import X from "lucide-react/icons/x";
 import { MAX_NOTICE_BODY } from "./knowledge";
 import { relativeTime } from "./tasks-view";
+import { askConfirm, showNotice } from "./confirm-dialog";
 
 type Notice = { id: number; title: string; body: string; important: boolean; expiresOn: string | null; createdByName: string; createdAt: string; readByMe: boolean; readCount: number; audience: number; pending: string[] | null; canDelete: boolean; teamName: string | null; remindedAt: string | null; remindedRecently: boolean };
 type Data = { notices: Notice[]; teams?: { id: number; name: string }[]; me: { id: number; canPost: boolean } };
@@ -67,7 +69,7 @@ export default function NoticeBoard() {
         {notice.important && <span className="notice-flag">Importante</span>}
         <strong>{notice.title}</strong>
         {notice.teamName && <span className="notice-team">Só {notice.teamName}</span>}
-        {notice.canDelete && <button className="notice-delete" onClick={() => { if (window.confirm(`Tirar o aviso “${notice.title}” do mural?`)) void act({ action: "deleteNotice", noticeId: notice.id }); }} aria-label="Tirar aviso do mural" title="Tirar do mural"><Trash2 size={13} /></button>}
+        {notice.canDelete && <button className="notice-delete" onClick={async () => { if (await askConfirm(`Tirar o aviso “${notice.title}” do mural?`)) void act({ action: "deleteNotice", noticeId: notice.id }); }} aria-label="Tirar aviso do mural" title="Tirar do mural"><Trash2 size={13} /></button>}
       </div>
       {notice.body && <p className="notice-body">{notice.body}</p>}
       <div className="notice-foot">
@@ -75,7 +77,7 @@ export default function NoticeBoard() {
         {notice.pending && <button className="notice-readers" onClick={() => setShowPending(showPending === notice.id ? null : notice.id)}>{notice.readCount} de {notice.audience} leram</button>}
         {notice.readByMe ? <span className="notice-done"><Check size={13} /> Lido</span> : <button className="primary-button notice-ack" onClick={() => void act({ action: "markRead", noticeId: notice.id })}><Check size={14} /> Li e entendi</button>}
       </div>
-      {showPending === notice.id && notice.pending && <p className="notice-pending">{notice.pending.length ? <>Ainda não leram: {notice.pending.join(", ")} <button className="link-button" disabled={notice.remindedRecently} title={notice.remindedAt ? `Último lembrete ${relativeTime(notice.remindedAt)}` : "Avisa no sino quem ainda não leu"} onClick={async () => { setError(""); try { const result = await post({ action: "remindPending", noticeId: notice.id }); window.alert(`Lembrete enviado para ${result.sent ?? 0} pessoa${result.sent === 1 ? "" : "s"}.`); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível lembrar."); } }}>{notice.remindedRecently ? "Lembrete enviado" : "Lembrar quem não leu"}</button></> : "Todo mundo já leu."}</p>}
+      {showPending === notice.id && notice.pending && <p className="notice-pending">{notice.pending.length ? <>Ainda não leram: {notice.pending.join(", ")} <button className="link-button" disabled={notice.remindedRecently} title={notice.remindedAt ? `Último lembrete ${relativeTime(notice.remindedAt)}` : "Avisa no sino quem ainda não leu"} onClick={async () => { setError(""); try { const result = await post({ action: "remindPending", noticeId: notice.id }); await showNotice(`Lembrete enviado para ${result.sent ?? 0} pessoa${result.sent === 1 ? "" : "s"}.`); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível lembrar."); } }}>{notice.remindedRecently ? "Lembrete enviado" : "Lembrar quem não leu"}</button></> : "Todo mundo já leu."}</p>}
     </div>)}
     {ordered.length > shown.length && <button className="notice-more" onClick={() => setShowAll(true)}>Ver avisos já lidos ({ordered.length - shown.length})</button>}
     {creating && <NoticeModal teams={data.teams ?? []} onClose={() => setCreating(false)} onSaved={async () => { setCreating(false); await load(); }} />}
@@ -101,7 +103,8 @@ function NoticeModal({ teams, onClose, onSaved }: { teams: { id: number; name: s
     }
   }
 
-  return <div className="modal-layer"><button className="backdrop" onClick={onClose} aria-label="Fechar janela" /><form className="modal" onSubmit={submit}>
+  // Abre no corpo da página, fora do mural: assim os estilos do mural (inclusive o vazio) não alcançam a janela.
+  return createPortal(<div className="modal-layer"><button className="backdrop" onClick={onClose} aria-label="Fechar janela" /><form className="modal" onSubmit={submit}>
     <div className="modal-head"><div><h2>Novo aviso</h2><p>Aparece na Visão geral, com o botão “Li e entendi”, e todos do público recebem aviso no sino.</p></div><button type="button" onClick={onClose} aria-label="Fechar"><X /></button></div>
     <div className="form-grid">
       <label className="full"><span>Título</span><input autoFocus required maxLength={120} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Ex.: Nova regra para abertura de chamados" /></label>
@@ -112,5 +115,5 @@ function NoticeModal({ teams, onClose, onSaved }: { teams: { id: number; name: s
     </div>
     {error && <p className="modal-error">{error}</p>}
     <div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving || !form.title.trim()}>{saving ? "Publicando..." : "Publicar aviso"}</button></div>
-  </form></div>;
+  </form></div>, document.body);
 }

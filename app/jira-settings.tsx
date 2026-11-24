@@ -9,6 +9,7 @@ import Trash2 from "lucide-react/icons/trash-2";
 import X from "lucide-react/icons/x";
 import { relativeTime } from "./tasks-view";
 import { TICKETS_CHANGED } from "./use-jira-sync";
+import { askConfirm } from "./confirm-dialog";
 
 type Connection = { id: number; name: string; baseUrl: string; email: string; active: boolean; teamId: number | null; lastSyncAt: string | null; cursorAt: string | null; lastError: string | null; hasToken: boolean };
 type Project = { connectionId: number; projectKey: string; projectName: string; clientId: number | null; enabled: boolean };
@@ -81,7 +82,7 @@ export default function JiraSettings({ onClose, onSynced }: { onClose: () => voi
   }
 
   async function remove(connection: Connection) {
-    if (!window.confirm(`Remover a conta “${connection.name}”? Os chamados que já vieram dela continuam no Portal, mas param de ser atualizados.`)) return;
+    if (!await askConfirm(`Remover a conta “${connection.name}”? Os chamados que já vieram dela continuam no Portal, mas param de ser atualizados.`)) return;
     try { await post({ action: "deleteConnection", connectionId: connection.id }); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível remover."); }
   }
 

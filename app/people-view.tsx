@@ -22,6 +22,7 @@ import { useAbsences } from "./use-absences";
 import { PersonKudos } from "./team-wall";
 import { ActivityHeatmap } from "./activity-heatmap";
 import { PersonProfile } from "./person-profile";
+import { askConfirm } from "./confirm-dialog";
 
 export type Person = { id: number; name: string; email: string; role: "admin" | "member" | "viewer"; active: boolean; avatarIcon: string; avatarKey: string | null; jobTitle: string; phone: string; birthday?: string | null; startedOn?: string | null };
 
@@ -227,7 +228,7 @@ function TeamModal({ team, people, onClose, onSaved }: { team: Team | null; peop
   }
 
   async function remove() {
-    if (!team || !window.confirm(`Excluir o time ${team.name}? As pessoas continuam no sistema, e as demandas deste time ficam sem time.`)) return;
+    if (!team || !await askConfirm(`Excluir o time ${team.name}? As pessoas continuam no sistema, e as demandas deste time ficam sem time.`)) return;
     try { await post({ action: "deleteTeam", teamId: team.id }); onSaved(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); }
   }
 

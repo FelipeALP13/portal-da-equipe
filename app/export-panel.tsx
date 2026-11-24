@@ -8,6 +8,7 @@ import KeyRound from "lucide-react/icons/key-round";
 import Plus from "lucide-react/icons/plus";
 import X from "lucide-react/icons/x";
 import { EXPORT_DATASETS, type ExportDataset } from "./export-data";
+import { askConfirm } from "./confirm-dialog";
 
 type Key = { id: number; name: string; kind: string; prefix: string; createdByName: string; createdAt: string; lastUsedAt: string | null; revokedAt: string | null };
 
@@ -66,7 +67,7 @@ export default function ExportPanel() {
       <ul className="export-urls">{EXPORT_DATASETS.map((entry) => { const url = `${origin}/api/export?dataset=${entry.key}&format=json`; return <li key={entry.key}><span>{entry.label}</span><code>{url}</code><button className="task-drawer-icon" onClick={() => void copy(url, entry.key)} aria-label={`Copiar endereço de ${entry.label}`} title="Copiar endereço">{copied === entry.key ? "✓" : <Copy size={13} />}</button></li>; })}</ul>
       {error && <p className="modal-error">{error}</p>}
       {keys && active.length > 0 && <ul className="integration-list">{active.map((key) => <li key={key.id}><div><strong>{key.name}</strong> <code>{key.prefix}</code><small>último uso: {when(key.lastUsedAt)} · criada por {key.createdByName}</small></div>
-        <button className="secondary-button danger" onClick={async () => { if (!window.confirm(`Revogar a chave "${key.name}"? O Power BI que usa esta chave para de atualizar.`)) return; try { await send({ action: "revokeKey", id: key.id }); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível revogar."); } }}>Revogar</button></li>)}</ul>}
+        <button className="secondary-button danger" onClick={async () => { if (!await askConfirm(`Revogar a chave "${key.name}"? O Power BI que usa esta chave para de atualizar.`)) return; try { await send({ action: "revokeKey", id: key.id }); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível revogar."); } }}>Revogar</button></li>)}</ul>}
     </div>
   </section>;
 }

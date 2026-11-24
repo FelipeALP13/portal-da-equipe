@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Copy from "lucide-react/icons/copy";
 import X from "lucide-react/icons/x";
+import { askConfirm } from "./confirm-dialog";
 
 async function post<T>(payload: Record<string, unknown>) {
   const response = await fetch("/api/agenda", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -40,12 +41,12 @@ export default function CalendarLinkModal({ hasLink, onClose, onChanged }: { has
     </div>
     <div className="modal-actions">
       {hasLink && <button type="button" className="secondary-button modal-delete" disabled={busy} onClick={() => run(async () => {
-        if (!window.confirm("Desligar o link? O calendário no Outlook para de atualizar.")) return;
+        if (!await askConfirm("Desligar o link? O calendário no Outlook para de atualizar.")) return;
         await post({ action: "removeCalendarLink" }); setUrl(""); onChanged(false); setNotice("Link desligado.");
       })}>Desligar link</button>}
       <button type="button" className="secondary-button" onClick={onClose}>Fechar</button>
       <button type="button" className="primary-button" disabled={busy} onClick={() => run(async () => {
-        if (hasLink && !window.confirm("Gerar um link novo? O link atual para de funcionar.")) return;
+        if (hasLink && !await askConfirm("Gerar um link novo? O link atual para de funcionar.")) return;
         const result = await post<{ url: string }>({ action: "calendarLink" }); setUrl(result.url); onChanged(true);
       })}>{busy ? "Gerando..." : hasLink ? "Gerar link novo" : "Gerar meu link"}</button>
     </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import RepeatIcon from "lucide-react/icons/repeat";
 import { describeRecurrence, DUE_OPTIONS, isoWeekday, WEEKDAY_NAMES, type Frequency } from "./task-recurrence";
 import { taskCode } from "./tasks";
+import { askConfirm } from "./confirm-dialog";
 
 export type Recurrence = { frequency: Frequency; day: number; dueDays: number | null; nextOn: string; active: boolean; lastTaskId: number | null };
 
@@ -52,7 +53,7 @@ export default function RecurrencePanel({ taskId, recurrence, canEdit, onChanged
       <div className="recurrence-actions">
         <button type="button" className="primary-button" disabled={busy} onClick={() => run(async () => { onChanged(await post({ action: "saveRecurrence", taskId, ...form })); setEditing(false); })}>Salvar</button>
         <button type="button" className="secondary-button" disabled={busy} onClick={() => setEditing(false)}>Cancelar</button>
-        {recurrence && <button type="button" className="link-button danger" disabled={busy} onClick={() => run(async () => { if (!window.confirm("Parar de repetir esta demanda? As cópias já criadas continuam.")) return; onChanged(await post({ action: "removeRecurrence", taskId })); setEditing(false); })}>Parar de repetir</button>}
+        {recurrence && <button type="button" className="link-button danger" disabled={busy} onClick={() => run(async () => { if (!await askConfirm("Parar de repetir esta demanda? As cópias já criadas continuam.")) return; onChanged(await post({ action: "removeRecurrence", taskId })); setEditing(false); })}>Parar de repetir</button>}
       </div>
       {form.frequency === "monthly" && <small className="form-hint">Até o dia 28, para valer em todos os meses.</small>}
     </div>}

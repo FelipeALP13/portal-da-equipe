@@ -9,6 +9,7 @@ import Smile from "lucide-react/icons/smile";
 import Star from "lucide-react/icons/star";
 import X from "lucide-react/icons/x";
 import { MAX_PULSE_COMMENT, monthLabel, moodOf } from "./people-tools";
+import { showNotice } from "./confirm-dialog";
 
 type Month = { month: string; count: number; hidden: boolean; averages: { question: string; average: number }[]; overall: number | null; comments: string[] | null };
 type Data = { enabled: boolean; questions: string[]; current: { id: number; month: string; questions: string[]; answered: boolean; responses: number; people: number } | null; history: Month[]; minAnswers: number; me: { id: number; isAdmin: boolean } };
@@ -102,7 +103,7 @@ function PulseSettings({ data, onClose, onSaved }: { data: Data; onClose: () => 
   const [questions, setQuestions] = useState(data.questions.join("\n"));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  return <div className="modal-layer"><button className="backdrop" onClick={onClose} aria-label="Fechar janela" /><form className="modal" onSubmit={async (event) => { event.preventDefault(); setSaving(true); setError(""); try { const result = await call({ action: "saveSettings", enabled, questions }); if (enabled && !result.appliedNow && data.current) window.alert("Salvo. Como alguém já respondeu este mês, as perguntas novas valem a partir do próximo mês."); onSaved(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível salvar."); setSaving(false); } }}>
+  return <div className="modal-layer"><button className="backdrop" onClick={onClose} aria-label="Fechar janela" /><form className="modal" onSubmit={async (event) => { event.preventDefault(); setSaving(true); setError(""); try { const result = await call({ action: "saveSettings", enabled, questions }); if (enabled && !result.appliedNow && data.current) await showNotice("Salvo. Como alguém já respondeu este mês, as perguntas novas valem a partir do próximo mês."); onSaved(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível salvar."); setSaving(false); } }}>
     <div className="modal-head"><div><h2>Configurar</h2><p>A pesquisa abre sozinha todo dia 1º e todos recebem aviso no sino; no dia 20, quem não respondeu recebe lembrete.</p></div><button type="button" onClick={onClose} aria-label="Fechar"><X /></button></div>
     <div className="form-grid">
       <label className="checkbox-line full"><input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} /> <span>Pesquisa mensal ligada</span></label>

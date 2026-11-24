@@ -19,6 +19,7 @@ import { burndown, RETRO_COLUMNS, sprintCapacity, type RetroKind } from "./offic
 import { formatHours } from "./time-entries";
 import { taskCode, taskStatusLabels, type TaskStatus } from "./tasks";
 import { Avatar, relativeTime } from "./task-shared";
+import { askConfirm } from "./confirm-dialog";
 
 type Me = { id: number; canEdit: boolean; isAdmin: boolean };
 type Team = { id: number; name: string; color?: string };
@@ -134,7 +135,7 @@ function SprintDetailPanel({ sprintId, sprints, teams, onOpenTask, onEdit, onCha
         {sprint.status === "planned" && <button className="primary-button" onClick={() => void run({ action: "startSprint", sprintId })}><Play size={14} /> Começar</button>}
         {sprint.status !== "closed" && <button className="secondary-button" onClick={() => setClosing(true)}><Check size={14} /> Encerrar</button>}
         <button className="person-edit" onClick={() => onEdit(sprint)} title="Editar sprint" aria-label="Editar sprint"><Pencil size={14} /></button>
-        {me.isAdmin && <button className="person-edit" onClick={async () => { if (window.confirm(`Excluir ${sprint.name}? As demandas continuam existindo, só saem do sprint.`) && await run({ action: "deleteSprint", sprintId })) await onDeleted(); }} title="Excluir sprint" aria-label="Excluir sprint"><Trash2 size={14} /></button>}
+        {me.isAdmin && <button className="person-edit" onClick={async () => { if (await askConfirm(`Excluir ${sprint.name}? As demandas continuam existindo, só saem do sprint.`) && await run({ action: "deleteSprint", sprintId })) await onDeleted(); }} title="Excluir sprint" aria-label="Excluir sprint"><Trash2 size={14} /></button>}
       </div>}
     </header>
     {error && <div className="alert error"><span>{error}</span><button onClick={() => setError("")} aria-label="Fechar aviso"><X size={16} /></button></div>}
@@ -311,7 +312,7 @@ function RetroBoard({ retroId, onOpenTask, onChanged, onDeleted }: { retroId: nu
         <p>Criada por {retro.createdByName} · {relativeTime(retro.createdAt)}{retro.anonymous ? <> · <Lock size={11} /> anônima: ninguém vê quem escreveu</> : ""}</p></div>
       <div className="sprint-actions">
         {retro.canManage && <button className="secondary-button" onClick={async () => { await run({ action: open ? "closeRetro" : "reopenRetro" }); await onChanged(); }}>{open ? <><Check size={14} /> Encerrar</> : "Reabrir"}</button>}
-        {me.isAdmin && <button className="person-edit" onClick={async () => { if (window.confirm(`Excluir “${retro.title}” e todos os itens?`) && await run({ action: "deleteRetro" })) await onDeleted(); }} title="Excluir" aria-label="Excluir retrospectiva"><Trash2 size={14} /></button>}
+        {me.isAdmin && <button className="person-edit" onClick={async () => { if (await askConfirm(`Excluir “${retro.title}” e todos os itens?`) && await run({ action: "deleteRetro" })) await onDeleted(); }} title="Excluir" aria-label="Excluir retrospectiva"><Trash2 size={14} /></button>}
       </div>
     </header>
     {error && <div className="alert error"><span>{error}</span><button onClick={() => setError("")} aria-label="Fechar aviso"><X size={16} /></button></div>}
@@ -326,8 +327,8 @@ function RetroBoard({ retroId, onOpenTask, onChanged, onDeleted }: { retroId: nu
           <footer>
             <button className={`retro-vote ${item.votedByMe ? "on" : ""}`} disabled={!open || !me.canEdit} onClick={() => void run({ action: "vote", itemId: item.id, on: !item.votedByMe })} aria-pressed={item.votedByMe} title={item.votedByMe ? "Tirar meu voto" : "Votar"}><ThumbsUp size={12} /> {item.votes}</button>
             {item.authorName && <small>{item.authorName.split(" ")[0]}</small>}
-            {item.kind === "action" && (item.taskId ? <button className="link-button" onClick={() => onOpenTask(item.taskId!)}>{taskCode(item.taskId)}</button> : me.canEdit && <button className="link-button" onClick={async () => { const result = await run({ action: "itemToTask", itemId: item.id }) as { taskId?: number } | null; if (result?.taskId && window.confirm(`Demanda ${taskCode(result.taskId)} criada. Abrir agora?`)) onOpenTask(result.taskId); }}>Virar demanda</button>)}
-            {(item.mine || retro.canManage) && me.canEdit && <button className="dep-remove" onClick={() => { if (window.confirm("Apagar este item?")) void run({ action: "deleteItem", itemId: item.id }); }} title="Apagar" aria-label="Apagar item"><Trash2 size={12} /></button>}
+            {item.kind === "action" && (item.taskId ? <button className="link-button" onClick={() => onOpenTask(item.taskId!)}>{taskCode(item.taskId)}</button> : me.canEdit && <button className="link-button" onClick={async () => { const result = await run({ action: "itemToTask", itemId: item.id }) as { taskId?: number } | null; if (result?.taskId && await askConfirm(`Demanda ${taskCode(result.taskId)} criada. Abrir agora?`)) onOpenTask(result.taskId); }}>Virar demanda</button>)}
+            {(item.mine || retro.canManage) && me.canEdit && <button className="dep-remove" onClick={async () => { if (await askConfirm("Apagar este item?")) void run({ action: "deleteItem", itemId: item.id }); }} title="Apagar" aria-label="Apagar item"><Trash2 size={12} /></button>}
           </footer>
         </li>)}</ul>
       </section>)}

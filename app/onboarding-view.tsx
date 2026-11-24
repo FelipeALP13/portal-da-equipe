@@ -8,6 +8,7 @@ import Sprout from "lucide-react/icons/sprout";
 import Trash2 from "lucide-react/icons/trash-2";
 import X from "lucide-react/icons/x";
 import { Avatar, relativeTime } from "./task-shared";
+import { askConfirm } from "./confirm-dialog";
 
 type Person = { id: number; name: string; avatarIcon: string; avatarKey: string | null };
 type Item = { id: number; text: string; done: boolean; doneByName: string | null; doneAt: string | null };
@@ -81,7 +82,7 @@ export function OnboardingCard({ row, people, isAdmin, onChanged, compact = fals
       <Avatar member={person} size={36} />
       <div><strong>{person?.name ?? "Pessoa removida"}</strong><small>Começou em {shortDate(row.startDate)}{buddy ? ` · padrinho: ${buddy.name}` : " · sem padrinho"}</small></div>
       {!compact && row.canEdit && (row.status === "active" ? <button className="secondary-button" disabled={busy} onClick={() => void run({ action: "finish", onboardingId: row.id })}><Check size={13} /> Concluir</button> : <button className="link-button" disabled={busy} onClick={() => void run({ action: "reopen", onboardingId: row.id })}>Reabrir</button>)}
-      {!compact && isAdmin && <button className="person-edit" disabled={busy} onClick={() => { if (window.confirm(`Excluir a integração de ${person?.name ?? "esta pessoa"}?`)) void run({ action: "deleteOnboarding", onboardingId: row.id }); }} title="Excluir" aria-label="Excluir integração"><Trash2 size={13} /></button>}
+      {!compact && isAdmin && <button className="person-edit" disabled={busy} onClick={async () => { if (await askConfirm(`Excluir a integração de ${person?.name ?? "esta pessoa"}?`)) void run({ action: "deleteOnboarding", onboardingId: row.id }); }} title="Excluir" aria-label="Excluir integração"><Trash2 size={13} /></button>}
     </header>
     <span className="checklist-bar" aria-hidden="true"><i style={{ width: `${percent}%` }} className={percent === 100 ? "complete" : ""} /></span>
     <p className="onboarding-progress">{doneCount} de {row.items.length} passos{row.completedAt ? ` · concluída ${relativeTime(row.completedAt)}` : ""}</p>

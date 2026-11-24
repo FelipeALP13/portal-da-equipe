@@ -13,6 +13,7 @@ import Trash2 from "lucide-react/icons/trash-2";
 import X from "lucide-react/icons/x";
 import { devStatusLabels, weakestCriteria, type DevStatus } from "./people-tools";
 import { Avatar, relativeTime } from "./task-shared";
+import { askConfirm } from "./confirm-dialog";
 
 type Person = { id: number; name: string; jobTitle: string; avatarIcon: string; avatarKey: string | null };
 type Meeting = { id: number; leaderId: number; memberId: number; date: string; status: "planned" | "done"; agenda: string; notes: string; privateNotes?: string; updatedAt: string; canEdit: boolean; isLeader: boolean };
@@ -63,7 +64,7 @@ export default function OneOnOnesView() {
   const nameOf = (id: number) => data.people.find((entry) => entry.id === id)?.name ?? "Pessoa";
 
   async function act(payload: Record<string, unknown>, confirm?: string) {
-    if (confirm && !window.confirm(confirm)) return;
+    if (confirm && !await askConfirm(confirm)) return;
     setError("");
     try { await call(payload); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível concluir."); }
   }
@@ -151,7 +152,7 @@ function MeetingModal({ meeting, memberId, memberName, meId, onClose, onSaved }:
     </div>
     {error && <p className="modal-error">{error}</p>}
     <div className="modal-actions">
-      {meeting && ownLeader && <button type="button" className="secondary-button danger-text" onClick={async () => { if (!window.confirm("Excluir esta reunião e as anotações?")) return; try { await call({ action: "deleteMeeting", meetingId: meeting.id }); onSaved(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }}><Trash2 size={14} /> Excluir</button>}
+      {meeting && ownLeader && <button type="button" className="secondary-button danger-text" onClick={async () => { if (!await askConfirm("Excluir esta reunião e as anotações?")) return; try { await call({ action: "deleteMeeting", meetingId: meeting.id }); onSaved(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }}><Trash2 size={14} /> Excluir</button>}
       <button type="button" className="secondary-button" onClick={onClose}>Cancelar</button>
       <button className="primary-button" disabled={saving}>{saving ? "Salvando..." : meeting ? "Salvar" : "Marcar e avisar"}</button>
     </div>

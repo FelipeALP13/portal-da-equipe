@@ -8,6 +8,7 @@ import ShoppingBasket from "lucide-react/icons/shopping-basket";
 import X from "lucide-react/icons/x";
 import { fmt, ItemVisual, type Item } from "./dashboard-shared";
 import type { ShoppingLine } from "./stock-forecast";
+import { askConfirm } from "./confirm-dialog";
 
 type Entry = { itemId: number; qty: number; checked: boolean; suggested: number | null };
 
@@ -70,8 +71,8 @@ export function ShoppingTrip({ lines, items, onClose, onDone }: { lines: Shoppin
     update([...entries, { itemId, qty: 1, checked: true, suggested: null }]);
   }
 
-  function cancelTrip() {
-    if (checked.length && !window.confirm("Descartar esta ida ao mercado? O que você marcou não será registrado.")) return;
+  async function cancelTrip() {
+    if (checked.length && !await askConfirm("Descartar esta ida ao mercado? O que você marcou não será registrado.")) return;
     saveDraft(null);
     onClose();
   }

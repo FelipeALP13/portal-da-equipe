@@ -10,6 +10,7 @@ import Paperclip from "lucide-react/icons/paperclip";
 import Trash2 from "lucide-react/icons/trash-2";
 import Upload from "lucide-react/icons/upload";
 import { ACCEPT_ATTRIBUTE, attachmentError, extensionOf, formatSize } from "./attachments";
+import { askConfirm } from "./confirm-dialog";
 
 type Attachment = { id: number; fileName: string; contentType: string; size: number; uploadedById: number | null; uploadedByName: string; createdAt: string; url: string };
 type Data = { attachments: Attachment[]; canEdit: boolean; meId: number; isAdmin: boolean };
@@ -69,7 +70,7 @@ export default function AttachmentsPanel({ ownerType, ownerId }: { ownerType: "t
   }
 
   async function remove(attachment: Attachment) {
-    if (!window.confirm(`Excluir o arquivo “${attachment.fileName}”?`)) return;
+    if (!await askConfirm(`Excluir o arquivo “${attachment.fileName}”?`)) return;
     setError("");
     const response = await fetch("/api/attachments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", id: attachment.id }) });
     const json = await response.json() as { error?: string };

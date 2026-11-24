@@ -16,6 +16,7 @@ import { taskCode, taskStatuses, taskStatusLabels, type TaskStatus } from "./tas
 import ProjectGantt, { ProjectPlanPanel, type GanttProject, type Milestone } from "./project-gantt";
 import GanttChart from "lucide-react/icons/gantt-chart";
 import LayoutList from "lucide-react/icons/layout-list";
+import { askConfirm } from "./confirm-dialog";
 
 type Person = { id: number; name: string; avatarIcon: string; avatarKey: string | null };
 type Client = { id: number; name: string; active: boolean };
@@ -237,7 +238,7 @@ function ProjectDrawer({ project, data, onClose, onSaved, onDeleted, onOpenTask 
       <header className="task-drawer-head">
         <span className="task-code">{project ? projectCode(project.id) : "Novo projeto"}</span>
         <span className="task-drawer-created">{project ? `Atualizado em ${fullDate(project.updatedAt.slice(0, 10))}` : "Projeto grande da liderança"}</span>
-        {project && data.me.isAdmin && <button className="task-drawer-icon danger" onClick={() => run(async () => { if (!window.confirm(`Excluir ${projectCode(project.id)} “${project.name}”? As demandas ligadas continuam existindo, só perdem o vínculo.`)) return; await post({ action: "deleteProject", projectId: project.id }); await onDeleted(); })} aria-label="Excluir projeto" title="Excluir projeto"><Trash2 size={15} /></button>}
+        {project && data.me.isAdmin && <button className="task-drawer-icon danger" onClick={() => run(async () => { if (!await askConfirm(`Excluir ${projectCode(project.id)} “${project.name}”? As demandas ligadas continuam existindo, só perdem o vínculo.`)) return; await post({ action: "deleteProject", projectId: project.id }); await onDeleted(); })} aria-label="Excluir projeto" title="Excluir projeto"><Trash2 size={15} /></button>}
         <button className="task-drawer-icon" onClick={onClose} aria-label="Fechar" title="Fechar (Esc)"><X size={16} /></button>
       </header>
       <div className="project-drawer-body">

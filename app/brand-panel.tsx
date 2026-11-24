@@ -10,6 +10,7 @@ import RotateCcw from "lucide-react/icons/rotate-ccw";
 import Users from "lucide-react/icons/users";
 import { BRAND_LIMITS, BRAND_PRESETS, DEFAULT_BRAND, brandPalette, contrast, isHexColor } from "./brand-theme";
 import { BrandLogo, useBrand, type PublicBrand } from "./brand-context";
+import { askConfirm } from "./confirm-dialog";
 
 async function post(body: BodyInit, json: boolean) {
   const response = await fetch("/api/brand", { method: "POST", headers: json ? { "Content-Type": "application/json" } : undefined, body });
@@ -96,7 +97,7 @@ export function BrandPanel() {
             <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(event) => { const picked = event.target.files?.[0]; if (fileRef.current) fileRef.current.value = ""; if (picked) setCropping(picked); }} />
             {cropping && <ImageCropper file={cropping} shape="square" title="Ajustar o logo" allowOriginal onCancel={() => setCropping(null)} onDone={(cropped) => { setCropping(null); uploadLogo(cropped); }} />}
             <button type="button" className="secondary-button" disabled={busy} onClick={() => fileRef.current?.click()}><Upload size={14} /> {brand.logoUrl ? "Trocar logo" : "Enviar logo"}</button>
-            {brand.logoUrl && <button type="button" className="link-button danger" disabled={busy} onClick={() => { if (window.confirm("Remover o logo? Volta o ícone padrão.")) void run(() => post(JSON.stringify({ action: "removeLogo" }), true), "Logo removido.", true); }}>Remover</button>}
+            {brand.logoUrl && <button type="button" className="link-button danger" disabled={busy} onClick={async () => { if (await askConfirm("Remover o logo? Volta o ícone padrão.")) void run(() => post(JSON.stringify({ action: "removeLogo" }), true), "Logo removido.", true); }}>Remover</button>}
           </div>
         </div>
       </div>
@@ -117,7 +118,7 @@ export function BrandPanel() {
     <div className="brand-settings-actions">
       <button className="primary-button" disabled={busy || !changed || form.name.trim().length < 2} onClick={() => void run(() => post(JSON.stringify({ action: "save", ...form }), true), "Marca salva. Já vale para toda a equipe.")}>{busy ? "Salvando..." : "Salvar marca"}</button>
       {changed && <button className="secondary-button" disabled={busy} onClick={() => { setForm({ name: brand.name, shortName: brand.shortName, tagline: brand.tagline, color: brand.color }); setHex(brand.color); }}>Desfazer</button>}
-      <button className="link-button" disabled={busy} onClick={() => { if (window.confirm("Voltar ao nome, cor e ícone padrão do Portal?")) void run(() => post(JSON.stringify({ action: "reset" }), true), "Marca padrão restaurada."); }}><RotateCcw size={13} /> Restaurar padrão</button>
+      <button className="link-button" disabled={busy} onClick={async () => { if (await askConfirm("Voltar ao nome, cor e ícone padrão do Portal?")) void run(() => post(JSON.stringify({ action: "reset" }), true), "Marca padrão restaurada."); }}><RotateCcw size={13} /> Restaurar padrão</button>
     </div>
     {notice && <p className="sessions-notice">{notice}</p>}
     {error && <p className="modal-error">{error}</p>}

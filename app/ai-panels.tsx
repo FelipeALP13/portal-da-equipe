@@ -5,6 +5,7 @@ import KeyRound from "lucide-react/icons/key-round";
 import RefreshCw from "lucide-react/icons/refresh-cw";
 import Sparkles from "lucide-react/icons/sparkles";
 import { SUMMARY_MIN_EVENTS } from "./ai-assist";
+import { askConfirm } from "./confirm-dialog";
 
 type Status = { configured: boolean; model: string; models: { id: string; label: string }[]; keyTail?: string | null; testUrl?: string | null; dev?: boolean };
 
@@ -88,7 +89,7 @@ export function AiSettingsPanel() {
     <div className="ai-settings-form">
       <label><span>Chave da Anthropic {status.keyTail && <em>(atual: {status.keyTail})</em>}</span><input type="password" autoComplete="off" value={key} onChange={(event) => setKey(event.target.value)} placeholder={status.configured ? "Cole uma chave nova para trocar" : "sk-ant-..."} /></label>
       <button className="primary-button" disabled={busy || !key.trim()} onClick={() => void run({ action: "saveKey", key }, "Chave salva.").then(() => setKey(""))}><KeyRound size={14} /> Salvar chave</button>
-      {status.configured && <button className="link-button danger" disabled={busy} onClick={() => { if (window.confirm("Remover a chave? O assistente some dos chamados.")) void run({ action: "removeKey" }, "Chave removida."); }}>Remover</button>}
+      {status.configured && <button className="link-button danger" disabled={busy} onClick={async () => { if (await askConfirm("Remover a chave? O assistente some dos chamados.")) void run({ action: "removeKey" }, "Chave removida."); }}>Remover</button>}
     </div>
     <div className="ai-settings-form">
       <label><span>Modelo</span><select value={status.model} disabled={busy} onChange={(event) => void run({ action: "saveModel", model: event.target.value }, "Modelo salvo.")}>{status.models.map((model) => <option key={model.id} value={model.id}>{model.label}</option>)}</select></label>

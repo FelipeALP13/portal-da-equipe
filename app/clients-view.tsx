@@ -23,6 +23,7 @@ import { taskCode, taskStatusLabels, type TaskStatus } from "./tasks";
 import { formatMinutes, ticketCode, ticketStatusLabels, ticketUrgencyLabels, type TicketStatus, type TicketUrgency } from "./tickets";
 import { downloadXlsx } from "./xlsx-writer";
 import { relativeTime } from "./task-shared";
+import { askConfirm } from "./confirm-dialog";
 
 type Viewer = { id: number; isAdmin: boolean; canEdit: boolean; teamIds: number[] };
 type ClientRow = { id: number; name: string; active: boolean; monthlyHours: number | null; contactName: string; openTasks: number; openTickets: number; hoursThisMonth: number; systems: number; systemsDown: number };
@@ -234,7 +235,7 @@ function SystemCard({ system, teams, isAdmin, onEdit, onChanged }: { system: Sys
       <span className="system-actions">
         {system.url && <button className="person-edit" disabled={busy} onClick={() => void run(async () => { const result = (await post({ action: "checkNow", systemId: system.id })).result; setMessage(result ? (result.ok ? `No ar · respondeu em ${result.ms} ms` : `Sem resposta: ${result.error}`) : ""); await onChanged(); })} title="Verificar agora" aria-label="Verificar agora"><RefreshCw size={13} /></button>}
         {isAdmin && <button className="person-edit" onClick={onEdit} title="Editar" aria-label={`Editar ${system.name}`}><Pencil size={13} /></button>}
-        {isAdmin && <button className="person-edit" disabled={busy} onClick={() => { if (window.confirm(`Excluir o acesso “${system.name}”? A senha guardada também será apagada.`)) void run(async () => { await post({ action: "deleteSystem", systemId: system.id }); await onChanged(); }); }} title="Excluir" aria-label={`Excluir ${system.name}`}><Trash2 size={13} /></button>}
+        {isAdmin && <button className="person-edit" disabled={busy} onClick={async () => { if (await askConfirm(`Excluir o acesso “${system.name}”? A senha guardada também será apagada.`)) void run(async () => { await post({ action: "deleteSystem", systemId: system.id }); await onChanged(); }); }} title="Excluir" aria-label={`Excluir ${system.name}`}><Trash2 size={13} /></button>}
       </span>
     </header>
     {system.url && <p className="system-url"><a href={system.url} target="_blank" rel="noopener noreferrer">{system.url} <ExternalLink size={12} /></a><button className="link-button" onClick={() => void copy(system.url, "Endereço")} aria-label="Copiar endereço" title="Copiar endereço"><Copy size={12} /></button></p>}

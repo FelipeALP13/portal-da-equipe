@@ -39,6 +39,7 @@ import { CHAT_CHANGED, OPEN_TASK_EVENT } from "./sidebar-nav";
 import { taskPriorities, taskPriorityLabels } from "./tasks";
 import { EMOJI_GROUPS, groupMessages, localInputToIso, MAX_ATTACHMENTS, MAX_MESSAGE, parseMarkdown, REACTIONS, reminderPresets, splitLinks, STATUS_DURATIONS, STATUS_KINDS, STATUS_LABELS, taskTitleFromMessage, typingText, type Inline, type PersonStatus, type StatusKind } from "./social-tools";
 import { Avatar, MentionTextarea } from "./task-shared";
+import { askConfirm } from "./confirm-dialog";
 
 export type Status = PersonStatus & { untilLabel: string | null };
 export type Person = { id: number; name: string; jobTitle?: string; avatarIcon: string; avatarKey: string | null; teamColor?: string | null; teamName?: string | null; online?: boolean; status?: Status | null };
@@ -712,7 +713,7 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
                     {me.canCreateTasks && !message.task && <button onClick={() => setMakingTask(message)} aria-label="Virar demanda" title="Virar demanda"><ListPlus size={15} /></button>}
                     <button onClick={() => void act({ action: "pin", messageId: message.id, pinned: !message.pinned })} aria-label={message.pinned ? "Desafixar" : "Fixar no topo"} title={message.pinned ? "Desafixar" : "Fixar no topo da conversa"}>{message.pinned ? <PinOff size={14} /> : <Pin size={14} />}</button>
                     {message.memberId === me.id && message.body && <button onClick={() => setEditing({ id: message.id, text: message.body })} aria-label="Editar" title="Editar"><Pencil size={14} /></button>}
-                    {(message.memberId === me.id || (me.isAdmin && !isDm)) && <button className="danger" onClick={() => { if (window.confirm("Apagar esta mensagem?")) void act({ action: "delete", messageId: message.id }); }} aria-label="Apagar" title="Apagar"><Trash2 size={14} /></button>}
+                    {(message.memberId === me.id || (me.isAdmin && !isDm)) && <button className="danger" onClick={async () => { if (await askConfirm("Apagar esta mensagem?")) void act({ action: "delete", messageId: message.id }); }} aria-label="Apagar" title="Apagar"><Trash2 size={14} /></button>}
                   </span>}
                 </div>
                 {lastMine === message.id && peerReadId !== null && !outbox.length && <p className={`cv-seen ${peerReadId >= message.id ? "read" : ""}`}>{peerReadId >= message.id ? <><CheckCheck size={13} /> Vista</> : <><Check size={13} /> Enviada</>}</p>}
@@ -743,7 +744,7 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
         onSchedule={async (body, at) => { await call("/api/chat", { action: "schedule", topicId, body, at }); setShowScheduled(true); await load(); }}
         extra={<>{scheduled.length > 0 && <div className="cv-scheduled">
           <button type="button" className="cv-scheduled-toggle" onClick={() => setShowScheduled(!showScheduled)}><CalendarClock size={13} /> {scheduled.length} {scheduled.length === 1 ? "mensagem agendada" : "mensagens agendadas"} {showScheduled ? "▴" : "▾"}</button>
-          {showScheduled && <ul>{scheduled.map((item) => <li key={item.id}><span><b>{new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(item.sendAt))}</b> {item.body.slice(0, 90)}</span><button type="button" onClick={() => { if (window.confirm("Cancelar o envio desta mensagem?")) void act({ action: "cancelScheduled", scheduledId: item.id }); }} aria-label="Cancelar envio" title="Cancelar envio"><X size={13} /></button></li>)}</ul>}
+          {showScheduled && <ul>{scheduled.map((item) => <li key={item.id}><span><b>{new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(item.sendAt))}</b> {item.body.slice(0, 90)}</span><button type="button" onClick={async () => { if (await askConfirm("Cancelar o envio desta mensagem?")) void act({ action: "cancelScheduled", scheduledId: item.id }); }} aria-label="Cancelar envio" title="Cancelar envio"><X size={13} /></button></li>)}</ul>}
         </div>}{replyTo && <p className="cv-replying"><Reply size={14} /><span>Respondendo a <b>{replyTo.authorName}</b>: {replyTo.body ? replyTo.body.slice(0, 80) : "Imagem"}</span><button onClick={() => setReplyTo(null)} aria-label="Cancelar resposta"><X size={14} /></button></p>}</>}
         onTyping={() => void call("/api/chat", { action: "typing", topicId }).catch(() => undefined)}
         onArrowUp={() => { const mine = [...messages].reverse().find((message) => message.memberId === me.id && !message.deleted && message.body); if (mine) { setEditing({ id: mine.id, text: mine.body }); return true; } return false; }}

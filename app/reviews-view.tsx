@@ -24,6 +24,7 @@ import PulseView from "./pulse-view";
 import { Avatar, relativeTime } from "./task-shared";
 import { OPEN_TASK_EVENT } from "./sidebar-nav";
 import { taskCode } from "./tasks";
+import { askConfirm } from "./confirm-dialog";
 
 type Me = { id: number; isAdmin: boolean };
 type Cycle = { id: number; title: string; startDate: string; endDate: string; status: "open" | "closed"; criteria?: { peer: string[]; company: string[]; manager: string[] } };
@@ -92,7 +93,7 @@ function ReviewTab() {
   ] as const;
 
   async function admin(payload: Record<string, unknown>, confirm?: string) {
-    if (confirm && !window.confirm(confirm)) return;
+    if (confirm && !await askConfirm(confirm)) return;
     try { await call("/api/reviews", payload); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível concluir."); }
   }
 
@@ -350,7 +351,7 @@ function GoalCard({ goal, owner, today, onEdit, onChanged }: { goal: Goal; owner
     </li>)}</ul>}
     {goal.canManage && (checklist ? <div className="goal-actions">
       <button className="secondary-button" onClick={onEdit}>Editar checklist</button>
-      <button className="person-edit" onClick={async () => { if (!window.confirm(`Excluir a meta “${goal.title}”?`)) return; try { await call("/api/goals", { action: "deleteGoal", goalId: goal.id }); await onChanged(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }} title="Excluir meta" aria-label="Excluir meta"><Trash2 size={13} /></button>
+      <button className="person-edit" onClick={async () => { if (!await askConfirm(`Excluir a meta “${goal.title}”?`)) return; try { await call("/api/goals", { action: "deleteGoal", goalId: goal.id }); await onChanged(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }} title="Excluir meta" aria-label="Excluir meta"><Trash2 size={13} /></button>
     </div> : updating ? <form className="goal-update" onSubmit={async (event) => { event.preventDefault(); setError(""); try { await call("/api/goals", { action: "updateProgress", goalId: goal.id, value, note }); setUpdating(false); setNote(""); await onChanged(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível salvar."); } }}>
       <input autoFocus aria-label="Valor atual" inputMode="decimal" value={value} onChange={(event) => setValue(event.target.value)} />
       <input aria-label="Observação" maxLength={300} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Observação (opcional)" />
@@ -358,7 +359,7 @@ function GoalCard({ goal, owner, today, onEdit, onChanged }: { goal: Goal; owner
     </form> : <div className="goal-actions">
       <button className="secondary-button" onClick={() => setUpdating(true)}>Atualizar progresso</button>
       <button className="person-edit" onClick={onEdit} title="Editar meta" aria-label="Editar meta"><Pencil size={13} /></button>
-      <button className="person-edit" onClick={async () => { if (!window.confirm(`Excluir a meta “${goal.title}”?`)) return; try { await call("/api/goals", { action: "deleteGoal", goalId: goal.id }); await onChanged(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }} title="Excluir meta" aria-label="Excluir meta"><Trash2 size={13} /></button>
+      <button className="person-edit" onClick={async () => { if (!await askConfirm(`Excluir a meta “${goal.title}”?`)) return; try { await call("/api/goals", { action: "deleteGoal", goalId: goal.id }); await onChanged(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }} title="Excluir meta" aria-label="Excluir meta"><Trash2 size={13} /></button>
     </div>)}
     {goal.updates.length > 0 && <button className="link-button" onClick={() => setShowHistory((current) => !current)}>{showHistory ? "Esconder histórico" : `Histórico (${goal.updates.length})`}</button>}
     {showHistory && <ul className="goal-history">{goal.updates.map((update) => <li key={update.id}><b>{fmt(update.value)}{unit}</b> <span>{update.byName.split(" ")[0]} · {relativeTime(update.at)}</span>{update.note && <em>{update.note}</em>}</li>)}</ul>}

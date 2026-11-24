@@ -13,6 +13,7 @@ import X from "lucide-react/icons/x";
 import { Avatar } from "./task-shared";
 import { relativeTime } from "./tasks-view";
 import { KUDOS_VALUES, MAX_KUDOS_MESSAGE, MAX_POLL_OPTION, MAX_POLL_OPTIONS, MAX_POLL_QUESTION, POLL_DURATIONS } from "./wall-tools";
+import { askConfirm } from "./confirm-dialog";
 
 type Face = { id: number; name: string; avatarIcon: string; avatarKey: string | null };
 export type KudosItem = { id: number; fromId: number | null; fromName: string; toId: number; toName: string; to: Face | null; from: Face | null; value: { key: string; label: string; emoji: string } | null; message: string; createdAt: string; canDelete: boolean };
@@ -69,8 +70,8 @@ export function PollCard({ poll, onChanged, compact = false }: { poll: PollItem;
     </ul>
     <div className="poll-foot">
       <small>{poll.voters} {poll.voters === 1 ? "voto" : "votos"} · {poll.multiple ? "várias escolhas" : "uma escolha"}{poll.anonymous ? " · anônima" : ""} · {poll.open ? (poll.closesAt ? untilLabel(poll.closesAt) : "aberta") : "encerrada"}{!compact && ` · ${poll.createdByName}`}</small>
-      {poll.canClose && <button type="button" className="link-button" disabled={busy} onClick={() => { if (window.confirm("Encerrar a enquete? Ninguém mais poderá votar.")) void act({ action: "closePoll", pollId: poll.id }); }}><Lock size={12} /> Encerrar</button>}
-      {poll.canDelete && !compact && <button type="button" className="link-button danger" disabled={busy} onClick={() => { if (window.confirm("Apagar a enquete e os votos?")) void act({ action: "deletePoll", pollId: poll.id }); }}><Trash2 size={12} /> Apagar</button>}
+      {poll.canClose && <button type="button" className="link-button" disabled={busy} onClick={async () => { if (await askConfirm("Encerrar a enquete? Ninguém mais poderá votar.")) void act({ action: "closePoll", pollId: poll.id }); }}><Lock size={12} /> Encerrar</button>}
+      {poll.canDelete && !compact && <button type="button" className="link-button danger" disabled={busy} onClick={async () => { if (await askConfirm("Apagar a enquete e os votos?")) void act({ action: "deletePoll", pollId: poll.id }); }}><Trash2 size={12} /> Apagar</button>}
     </div>
     {error && <p className="modal-error">{error}</p>}
   </div>;
@@ -86,7 +87,7 @@ export function KudosList({ items, onDelete, showTo = true }: { items: KudosItem
       <p className="kudos-message">“{item.message}”</p>
       <small>{relativeTime(item.createdAt)}</small>
     </div>
-    {item.canDelete && onDelete && <button type="button" className="notice-delete" onClick={() => { if (window.confirm("Apagar este elogio?")) onDelete(item.id); }} aria-label="Apagar elogio" title="Apagar"><Trash2 size={13} /></button>}
+    {item.canDelete && onDelete && <button type="button" className="notice-delete" onClick={async () => { if (await askConfirm("Apagar este elogio?")) onDelete(item.id); }} aria-label="Apagar elogio" title="Apagar"><Trash2 size={13} /></button>}
   </li>)}</ul>;
 }
 

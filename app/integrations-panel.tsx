@@ -6,6 +6,7 @@ import Copy from "lucide-react/icons/copy";
 import KeyRound from "lucide-react/icons/key-round";
 import Plus from "lucide-react/icons/plus";
 import X from "lucide-react/icons/x";
+import { askConfirm } from "./confirm-dialog";
 
 type Key = { id: number; name: string; kind?: string; prefix: string; teamId: number | null; teamName: string | null; kbTag: string; createdByName: string; createdAt: string; lastUsedAt: string | null; revokedAt: string | null; articles: number };
 type Team = { id: number; name: string };
@@ -58,7 +59,7 @@ export function IntegrationsPanel() {
   }
 
   async function revoke(key: Key) {
-    if (!window.confirm(`Revogar a chave "${key.name}"? O AtendeChat que usa esta chave para de consultar a base e de abrir chamados na hora.`)) return;
+    if (!await askConfirm(`Revogar a chave "${key.name}"? O AtendeChat que usa esta chave para de consultar a base e de abrir chamados na hora.`)) return;
     setError("");
     try { await send({ action: "revokeKey", id: key.id }); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível revogar."); }
   }

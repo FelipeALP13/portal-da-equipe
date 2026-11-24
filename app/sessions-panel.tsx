@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Laptop from "lucide-react/icons/laptop";
 import Smartphone from "lucide-react/icons/smartphone";
 import { parseStamp } from "./session-policy";
+import { askConfirm } from "./confirm-dialog";
 
 type Session = { id: number; device: string; createdAt: string; lastSeenAt: string; current: boolean };
 
@@ -51,7 +52,7 @@ export default function SessionsPanel() {
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   async function end(all: boolean) {
-    if (all && !window.confirm("Sair de todos os aparelhos, inclusive deste? Você vai precisar entrar de novo com a senha.")) return;
+    if (all && !await askConfirm("Sair de todos os aparelhos, inclusive deste? Você vai precisar entrar de novo com a senha.")) return;
     setBusy(true); setError(""); setNotice("");
     try {
       const result = await post<{ ended: number; loggedOut: boolean }>({ action: all ? "endAllSessions" : "endOtherSessions" });

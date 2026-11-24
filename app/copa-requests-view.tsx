@@ -11,6 +11,7 @@ import X from "lucide-react/icons/x";
 import { relativeTime } from "./task-shared";
 import { MAX_REQUEST_NOTE, MAX_REQUEST_TITLE, REQUEST_STATUS_LABEL, type RequestStatus } from "./copa-tools";
 import type { Item } from "./dashboard-shared";
+import { askConfirm } from "./confirm-dialog";
 
 type CopaRequest = {
   id: number; title: string; note: string; status: RequestStatus;
@@ -134,7 +135,7 @@ export function CopaRequestsView({ items, onStockChanged }: { items: Item[]; onS
               <button type="button" className="secondary-button" onClick={() => setDecision({ request, mode: "approve" })}><Check size={15} /> Aprovar</button>
               <button type="button" className="secondary-button" onClick={() => setDecision({ request, mode: "decline" })}>Recusar</button>
             </>}
-            {request.canDelete && <button type="button" className="copa-icon" title="Tirar o pedido" aria-label={`Tirar o pedido ${request.title}`} onClick={() => { if (window.confirm(`Tirar o pedido "${request.title}"?`)) void act({ action: "deleteRequest", requestId: request.id }); }}><Trash2 size={15} /></button>}
+            {request.canDelete && <button type="button" className="copa-icon" title="Tirar o pedido" aria-label={`Tirar o pedido ${request.title}`} onClick={async () => { if (await askConfirm(`Tirar o pedido "${request.title}"?`)) void act({ action: "deleteRequest", requestId: request.id }); }}><Trash2 size={15} /></button>}
           </div>
         </li>)}
       </ul>}

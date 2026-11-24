@@ -40,6 +40,7 @@ import { SegmentedControl } from "./task-shared";
 import SlidersHorizontal from "lucide-react/icons/sliders-horizontal";
 import { fillReply, onTicketBoard, REPLY_FIELDS, repliesFor, TICKET_BOARD_STATUSES, type TicketBoardStatus } from "./team-tools";
 import { canHandleTicket, compareTickets, describeTicketEvent, formatMinutes, isActiveTicket, isTicketLate, parseStoredDate, resolutionHours, resolutionStatus, slaStatus, ticketCode, ticketJourney, ticketStatuses, ticketStatusLabels, ticketTypeLabels, ticketTypes, ticketUrgencies, ticketUrgencyLabels, type SlaState, type TicketEventKind, type TicketStatus, type TicketType, type TicketUrgency } from "./tickets";
+import { askConfirm } from "./confirm-dialog";
 
 type Ticket = {
   id: number; title: string; description: string; type: TicketType; urgency: TicketUrgency; status: TicketStatus; client: string;
@@ -116,7 +117,7 @@ function SlaBadge({ ticket }: { ticket: Ticket }) {
   return <span className={`sla-badge ${sla.state}`} title="Prazo de primeira resposta"><Timer size={11} />{text}</span>;
 }
 
-export default function TicketsView({ openRequest = null, onOpenRequestHandled, onOpenTask, onOpenArticle, onSaveSolution, createRequest = 0 }: { openRequest?: number | null; onOpenRequestHandled?: () => void; onOpenTask: (taskId: number) => void; onOpenArticle: (articleId: number) => void; onSaveSolution: (draft: ArticleDraft) => void; createRequest?: number }) {
+export default function TicketsView({ openRequest = null, onOpenRequestHandled, onOpenTask, onOpenArticle, onSaveSolution, createRequest = 0, onCreateRequestHandled }: { openRequest?: number | null; onOpenRequestHandled?: () => void; onCreateRequestHandled?: () => void; onOpenTask: (taskId: number) => void; onOpenArticle: (articleId: number) => void; onSaveSolution: (draft: ArticleDraft) => void; createRequest?: number }) {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
   const [scope, setScope] = useState<Scope | null>(null);
@@ -172,11 +173,13 @@ export default function TicketsView({ openRequest = null, onOpenRequestHandled, 
   // Atalho "Abrir chamado" da visão geral.
   const handledCreate = useRef(0);
   useEffect(() => {
-    if (!createRequest || !data?.me.canEdit || handledCreate.current === createRequest) return;
+    if (!createRequest) { handledCreate.current = 0; return; }
+    if (!data?.me.canEdit || handledCreate.current === createRequest) return;
     handledCreate.current = createRequest;
-    const timer = window.setTimeout(() => setCreating(true), 0);
+    // Atende o pedido uma vez e avisa a tela principal para apagá-lo: ao sair e voltar, a janela não abre de novo.
+    const timer = window.setTimeout(() => { setCreating(true); onCreateRequestHandled?.(); }, 0);
     return () => window.clearTimeout(timer);
-  }, [createRequest, data]);
+  }, [createRequest, data, onCreateRequestHandled]);
 
   const effectiveScope: Scope = scope ?? (data?.me.teamIds.length ? "queue" : "requested");
   const teamsById = useMemo(() => new Map((data?.teams ?? []).map((team) => [team.id, team])), [data]);
@@ -467,7 +470,7 @@ function TicketDrawer({ ticket, data, onOpenTicket, onManageReplies, onClose, on
   const createTask = () => run(async () => {
     const result = await post({ action: "createTask", ticketId: ticket.id });
     await onReload();
-    if (result.task && window.confirm(`Demanda ${taskCode(result.task.id)} criada. Abrir agora?`)) onOpenTask(result.task.id);
+    if (result.task && await askConfirm(`Demanda ${taskCode(result.task.id)} criada. Abrir agora?`)) onOpenTask(result.task.id);
   });
 
   // Rascunho do artigo: o relato do chamado e os comentários de quem atendeu (revisados antes de salvar).
@@ -478,13 +481,13 @@ function TicketDrawer({ ticket, data, onOpenTicket, onManageReplies, onClose, on
   }
 
   const removeComment = (eventId: number) => run(async () => {
-    if (!window.confirm("Excluir este comentário?")) return;
+    if (!await askConfirm("Excluir este comentário?")) return;
     await post({ action: "deleteComment", eventId });
     await Promise.all([loadEvents(), onReload()]);
   });
 
   const removeTicket = () => run(async () => {
-    if (!window.confirm(`Excluir ${ticketCode(ticket.id)} “${ticket.title}”? Os comentários também serão apagados. Esta ação não pode ser desfeita.`)) return;
+    if (!await askConfirm(`Excluir ${ticketCode(ticket.id)} “${ticket.title}”? Os comentários também serão apagados. Esta ação não pode ser desfeita.`)) return;
     await post({ action: "deleteTicket", ticketId: ticket.id });
     onClose();
     await onReload();
@@ -644,7 +647,7 @@ function RepliesModal({ replies, teams, me, onClose, onChanged }: { replies: Rep
         <p className="full form-hint">Campos que viram o dado do chamado: {REPLY_FIELDS.map((field) => <button type="button" key={field.key} className="reply-field" onClick={() => setForm({ ...form, body: `${form.body}{${field.key}}` })} title={`Inserir ${field.label}`}>{`{${field.key}}`}</button>)}</p>
         {error && <p className="modal-error full">{error}</p>}
         <div className="modal-actions full">
-          {editing !== "new" && <button type="button" className="secondary-button modal-delete" disabled={busy} onClick={async () => { if (window.confirm(`Excluir a resposta “${editing.title}”?`) && await run({ action: "deleteReply", replyId: editing.id })) setEditing(null); }}><Trash2 size={15} /> Excluir</button>}
+          {editing !== "new" && <button type="button" className="secondary-button modal-delete" disabled={busy} onClick={async () => { if (await askConfirm(`Excluir a resposta “${editing.title}”?`) && await run({ action: "deleteReply", replyId: editing.id })) setEditing(null); }}><Trash2 size={15} /> Excluir</button>}
           <button type="button" className="secondary-button" onClick={() => setEditing(replies.length ? null : "new")}>{replies.length ? "Voltar" : "Limpar"}</button>
           <button className="primary-button" disabled={busy || !form.title.trim() || !form.body.trim()}>{busy ? "Salvando..." : "Salvar resposta"}</button>
         </div>

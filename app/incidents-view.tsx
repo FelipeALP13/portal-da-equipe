@@ -11,6 +11,7 @@ import X from "lucide-react/icons/x";
 import { isoToLocal } from "./agenda";
 import { durationLabel, incidentStatusLabels, minutesBetween, severityLabels, type IncidentStatus, type Severity } from "./people-tools";
 import { relativeTime } from "./task-shared";
+import { askConfirm } from "./confirm-dialog";
 
 type Update = { id: number; body: string; byName: string; at: string };
 type Incident = { id: number; clientId: number | null; systemId: number | null; title: string; severity: Severity; status: IncidentStatus; startedAt: string; resolvedAt: string | null; impact: string; cause: string; resolution: string; prevention: string; auto: boolean; createdByName: string; updates: Update[] };
@@ -105,7 +106,7 @@ function IncidentModal({ incident, data, onClose, onSaved }: { incident: Inciden
     </div>}
     {error && <p className="modal-error">{error}</p>}
     <div className="modal-actions">
-      {incident && data.me.isAdmin && <button type="button" className="secondary-button danger-text" onClick={async () => { if (!window.confirm(`Excluir o incidente “${incident.title}” e a linha do tempo?`)) return; try { await call({ action: "deleteIncident", incidentId: incident.id }); await onSaved(true); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }}><Trash2 size={14} /> Excluir</button>}
+      {incident && data.me.isAdmin && <button type="button" className="secondary-button danger-text" onClick={async () => { if (!await askConfirm(`Excluir o incidente “${incident.title}” e a linha do tempo?`)) return; try { await call({ action: "deleteIncident", incidentId: incident.id }); await onSaved(true); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }}><Trash2 size={14} /> Excluir</button>}
       <button type="button" className="secondary-button" onClick={onClose}>{readOnly ? "Fechar" : "Cancelar"}</button>
       {!readOnly && <button className="primary-button" disabled={saving || !form.title.trim()}>{saving ? "Salvando..." : "Salvar"}</button>}
     </div>

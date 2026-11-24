@@ -11,6 +11,7 @@ import X from "lucide-react/icons/x";
 import { fold, MAX_KB_BODY, searchArticles } from "./knowledge";
 import { relativeTime, TeamChip } from "./tasks-view";
 import { ticketCode } from "./tickets";
+import { askConfirm } from "./confirm-dialog";
 
 export type Article = { id: number; title: string; body: string; clientId: number | null; teamId: number | null; tags: string; ticketId: number | null; createdByName: string; updatedByName: string; createdAt: string; updatedAt: string; canDelete: boolean };
 type Client = { id: number; name: string; active: boolean };
@@ -106,7 +107,7 @@ export default function KnowledgeView({ openRequest = null, draft = null, onRequ
         <header className="task-drawer-head">
           <span className="task-drawer-created">Escrito por {open.createdByName} · atualizado {relativeTime(open.updatedAt)} por {open.updatedByName}</span>
           {data.me.canEdit && <button className="task-drawer-icon" onClick={() => setEditing(open)} aria-label="Editar artigo" title="Editar"><Pencil size={15} /></button>}
-          {open.canDelete && <button className="task-drawer-icon danger" onClick={async () => { if (!window.confirm(`Excluir o artigo “${open.title}”? Esta ação não pode ser desfeita.`)) return; try { await post({ action: "deleteArticle", articleId: open.id }); setReading(null); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }} aria-label="Excluir artigo" title="Excluir"><Trash2 size={15} /></button>}
+          {open.canDelete && <button className="task-drawer-icon danger" onClick={async () => { if (!await askConfirm(`Excluir o artigo “${open.title}”? Esta ação não pode ser desfeita.`)) return; try { await post({ action: "deleteArticle", articleId: open.id }); setReading(null); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível excluir."); } }} aria-label="Excluir artigo" title="Excluir"><Trash2 size={15} /></button>}
           <button className="task-drawer-icon" onClick={() => setReading(null)} aria-label="Fechar" title="Fechar"><X size={16} /></button>
         </header>
         <div className="kb-reader-body">

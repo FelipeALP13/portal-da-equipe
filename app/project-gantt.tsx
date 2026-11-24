@@ -6,6 +6,7 @@ import Link2 from "lucide-react/icons/link-2";
 import Plus from "lucide-react/icons/plus";
 import Trash2 from "lucide-react/icons/trash-2";
 import { barFor, dayLeft, daysPerPercent, dependencyConflict, dragDates, effectiveStart, isDay, timelineRange, wouldCreateCycle } from "./project-timeline";
+import { askConfirm } from "./confirm-dialog";
 
 export type Milestone = { id: number; title: string; date: string; done: boolean };
 export type GanttProject = { id: number; name: string; code: string; subtitle: string; farol: string; startDate: string | null; endForecast: string; closed: boolean; milestones: Milestone[]; dependsOn: number[] };
@@ -140,7 +141,7 @@ export function ProjectPlanPanel({ project, others, canEdit, onAction }: { proje
       {project.milestones.length ? <ul className="plan-milestones">{project.milestones.map((milestone) => <li key={milestone.id} className={milestone.done ? "done" : ""}>
         <label><input type="checkbox" checked={milestone.done} disabled={!canEdit || busy} onChange={(event) => void run({ action: "saveMilestone", milestoneId: milestone.id, title: milestone.title, date: milestone.date, done: event.target.checked })} /><span>{milestone.title}</span></label>
         <small>{fullDate(milestone.date)}</small>
-        {canEdit && <button type="button" className="task-drawer-icon" disabled={busy} onClick={() => { if (window.confirm(`Tirar a entrega “${milestone.title}”?`)) void run({ action: "deleteMilestone", milestoneId: milestone.id }); }} aria-label={`Tirar ${milestone.title}`}><Trash2 size={13} /></button>}
+        {canEdit && <button type="button" className="task-drawer-icon" disabled={busy} onClick={async () => { if (await askConfirm(`Tirar a entrega “${milestone.title}”?`)) void run({ action: "deleteMilestone", milestoneId: milestone.id }); }} aria-label={`Tirar ${milestone.title}`}><Trash2 size={13} /></button>}
       </li>)}</ul> : <p className="muted">Nenhuma entrega marcada.</p>}
       {canEdit && <form className="plan-add" onSubmit={async (event) => { event.preventDefault(); if (!title.trim() || !isDay(date)) return; await run({ action: "saveMilestone", title, date }); setTitle(""); setDate(""); }}>
         <input value={title} maxLength={80} onChange={(event) => setTitle(event.target.value)} placeholder="Ex.: Homologação com o cliente" aria-label="Nome da entrega" />

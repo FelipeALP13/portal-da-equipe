@@ -1,5 +1,7 @@
 "use client";
 
+import { askConfirm } from "./confirm-dialog";
+
 import LockKeyhole from "lucide-react/icons/lock-keyhole";
 import ThemePicker from "./theme-picker";
 import { useEffect, useMemo, useState } from "react";
@@ -210,7 +212,7 @@ export function Modal({ state, items, schedule, currentUser, saving, onClose, on
 
   async function handleScheduleDelete() {
     const confirmation = editingTeam ? `Excluir a ${editingTeam.name}? Só é possível quando ela não tem semanas na escala.` : editingWeek ? `Excluir a semana de ${weekLabel(editingWeek)} da escala?` : "";
-    if (!confirmation || !window.confirm(confirmation)) return;
+    if (!confirmation || !await askConfirm(confirmation)) return;
     setFormError("");
     const submissionError = editingTeam
       ? await onSubmit({ action: "deleteSupportTeam", teamId: editingTeam.id }, "Equipe excluída.")

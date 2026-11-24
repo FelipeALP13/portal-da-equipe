@@ -7,6 +7,7 @@ import ArrowLeftRight from "lucide-react/icons/arrow-left-right";
 import Check from "lucide-react/icons/check";
 import X from "lucide-react/icons/x";
 import type { SupportTeam, SupportWeek } from "./support-schedule";
+import { askConfirm, askText } from "./confirm-dialog";
 
 type WeekInfo = { id: number; startDate: string; endDate: string; teamId: number; teamName: string };
 type Swap = { id: number; status: "pending" | "approved" | "rejected" | "canceled"; reason: string; requesterName: string; createdAt: string; decidedByName: string | null; decisionNote: string; from: WeekInfo; to: WeekInfo; canDecide: boolean; canCancel: boolean };
@@ -66,10 +67,10 @@ export function ShiftSwaps({ weeks, teams, today, onScheduleChanged }: { weeks: 
       <div className="swap-actions">
         <small className="swap-status pending">{STATUS.pending}</small>
         {swap.canDecide && <>
-          <button className="secondary-button approve" onClick={() => { if (window.confirm(`Aprovar? ${swap.from.teamName} passa a ficar com ${range(swap.to)} e ${swap.to.teamName} com ${range(swap.from)}.`)) void act({ action: "decideSwap", swapId: swap.id, approve: true }, true); }}><Check size={14} /> Aprovar</button>
-          <button className="secondary-button" onClick={() => { const note = window.prompt("Recusar a troca? Se quiser, escreva o motivo (vai junto no aviso).", ""); if (note !== null) void act({ action: "decideSwap", swapId: swap.id, approve: false, note }); }}>Recusar</button>
+          <button className="secondary-button approve" onClick={async () => { if (await askConfirm(`Aprovar? ${swap.from.teamName} passa a ficar com ${range(swap.to)} e ${swap.to.teamName} com ${range(swap.from)}.`)) void act({ action: "decideSwap", swapId: swap.id, approve: true }, true); }}><Check size={14} /> Aprovar</button>
+          <button className="secondary-button" onClick={async () => { const note = await askText("Recusar a troca? Se quiser, escreva o motivo (vai junto no aviso)."); if (note !== null) void act({ action: "decideSwap", swapId: swap.id, approve: false, note }); }}>Recusar</button>
         </>}
-        {swap.canCancel && !swap.canDecide && <button className="secondary-button" onClick={() => { if (window.confirm("Cancelar o seu pedido de troca?")) void act({ action: "cancelSwap", swapId: swap.id }); }}><X size={14} /> Cancelar pedido</button>}
+        {swap.canCancel && !swap.canDecide && <button className="secondary-button" onClick={async () => { if (await askConfirm("Cancelar o seu pedido de troca?")) void act({ action: "cancelSwap", swapId: swap.id }); }}><X size={14} /> Cancelar pedido</button>}
       </div>
     </li>)}</ul>}
     {done.length > 0 && <>
