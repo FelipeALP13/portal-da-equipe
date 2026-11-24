@@ -21,6 +21,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: brand.name,
     description: APP_DESCRIPTION,
+    // Sistema interno: fora dos buscadores (o worker também manda X-Robots-Tag e o robots.txt bloqueia tudo).
+    robots: { index: false, follow: false },
     manifest: "/api/manifest",
     icons: logo ? { icon: logo, shortcut: logo, apple: brandIconUrl(brand, 512) ?? logo } : { icon: "/favicon.png", shortcut: "/favicon.png", apple: "/apple-touch-icon.png" },
     // No iPhone/iPad: "Adicionar à Tela de Início" abre como app.

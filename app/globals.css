@@ -1158,7 +1158,7 @@ mark.mention { padding: 0 2px; border-radius: 4px; color: var(--brand-text); bac
 .hub-work-grid > .hub-tasks { margin-top: 0; }
 .hub-task-row .urgency-badge { min-width: 54px; padding: 2px 6px; font-size: var(--fs-2xs); }
 .hub-internal-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-@media (max-width: 900px) { .hub-work-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .hub-work-grid { grid-template-columns: minmax(0, 1fr); } }
 .profile-teams { display: flex; flex-direction: column; gap: 7px; }
 .profile-teams > span { color: var(--text-secondary); font-size: var(--fs-xs); font-weight: 700; }
 .profile-teams > div { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -4541,3 +4541,17 @@ html[data-theme="dark"] .filters button.active { color: var(--on-brand); backgro
 .primary-button.danger-button { border-color: var(--danger-solid); color: #fff; background: var(--danger-solid); }
 .primary-button.danger-button:hover:not(:disabled) { border-color: var(--danger-text); background: var(--danger-text); }
 @media (max-width: 560px) { .confirm-body { padding: 18px 18px 14px; } .confirm-icon { width: 34px; height: 34px; } }
+
+/* Página 404 (app/not-found.tsx). */
+.not-found { display: grid; min-height: 100dvh; place-items: center; padding: 24px 16px; background: var(--canvas); }
+.not-found-card { width: min(460px, 100%); padding: 32px 28px; border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--surface); text-align: center; }
+.not-found-code { display: block; color: var(--brand-text); font-family: var(--font-display); font-size: 44px; font-weight: 600; letter-spacing: -.02em; }
+.not-found-card h1 { margin: 6px 0 8px; font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 600; }
+.not-found-card p { margin: 0 0 20px; color: var(--text-muted); font-size: var(--fs-base); line-height: 1.55; }
+
+/* Celular: em "Meu trabalho", o prazo vai para a linha de baixo quando falta espaço para o título. */
+@media (max-width: 560px) {
+  .hub-task-row { flex-wrap: wrap; row-gap: 4px; }
+  .hub-task-row .urgency-badge.is-quiet { display: none; }
+  .hub-task-row .task-title { flex: 1 1 140px; min-width: 0; }
+}

@@ -102,6 +102,8 @@ export default function LoginScreen() {
           </>}
           {error && <p className="login-error">{error}</p>}
           <button className="login-submit" disabled={loading || setupRequired === null}>{loading ? "Aguarde..." : setupRequired === null ? "Verificando..." : setupRequired ? "Criar acesso e entrar" : challenge ? "Confirmar código" : "Entrar"}<span>→</span></button>
+          {/* Não há "esqueci a senha" por e-mail: quem redefine é um administrador (Usuários → Redefinir senha). */}
+          {!setupRequired && <small className="login-note">Esqueceu a senha ou o código do aplicativo? Peça para um administrador redefinir.</small>}
           <small className="login-note">As senhas são protegidas e nunca aparecem para outros usuários.</small>
         </form>
       </section>
