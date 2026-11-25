@@ -350,7 +350,7 @@ export default function Home() {
 
   // Ações rápidas da busca (Ctrl+K): criar algo ou ir para uma tela sem passar pelo menu.
   const canWrite = Boolean(currentUser?.active && currentUser.role !== "viewer");
-  // Também formam o botão "+ Criar" do topo: cada uma abre o formulário na tela certa.
+  // Ações de criar: cada uma abre o formulário na tela certa.
   const createActions: QuickAction[] = canWrite ? [
     { id: "new-task", label: "Nova demanda", hint: "Criar", keywords: "criar tarefa atividade adicionar", icon: ListTodo, run: () => { openTask(); setNewTaskRequest((value) => value + 1); } },
     { id: "new-ticket", label: "Abrir chamado", hint: "Criar", keywords: "novo chamado pedido suporte ticket", icon: LifeBuoy, run: () => { openTicket(); setNewTicketRequest((value) => value + 1); } },
@@ -358,6 +358,8 @@ export default function Home() {
     { id: "new-absence", label: "Pedir ausência", hint: "Criar", keywords: "ferias folga atestado ausencia licenca", icon: CalendarOff, run: () => { openView("absences"); requestCreate("absence"); } },
     { id: "new-copa", label: "Pedido da copa", hint: "Criar", keywords: "copa cafe pedir item lanche faltando", icon: Coffee, run: () => { go("requests", true); requestCreate("copa"); } },
   ] : [];
+  // Na Visão geral, Nova demanda e Abrir chamado já têm botões próprios: lá o "+ Criar" fica só com o resto.
+  const createMenu = tab === "hub" ? createActions.filter((action) => action.id !== "new-task" && action.id !== "new-ticket") : createActions;
   const quickActions: QuickAction[] = [
     ...createActions,
     { id: "go-hub", label: "Visão geral", hint: "Ir para", keywords: "inicio home resumo painel", icon: Gauge, run: () => go("hub") },
@@ -433,7 +435,7 @@ export default function Home() {
         <header className="topbar">
           <button className="menu-button" onClick={() => setMobileMenu(true)} aria-label="Abrir menu"><Menu /></button>
           <div><h1>{tab === "hub" ? "Visão geral" : tab === "stock" ? "Estoque" : tab === "schedule" ? "Escala de atendimento" : tab === "tasks" ? "Demandas" : tab === "projects" ? "Projetos grandes" : tab === "panel" ? "Painel da liderança" :tab === "tickets" ? "Chamados internos" : tab === "knowledge" ? "Base de conhecimento" : tab === "admin" ? "Marca, histórico e cópia de segurança" : tab === "calendar" ? "Calendário" : tab === "agenda" ? "Minha agenda" : tab === "clients" ? "Clientes e sistemas" : tab === "reviews" ? "Avaliações e metas" : tab === "community" ? "Chat da equipe" : tab === "sprints" ? "Sprints e retrospectivas" :tab === "people" ? "Pessoas e times" :tab === "planning" ? "Planejamento do estoque" : tab === "requests" ? "Pedidos da Copa" : tab === "maintenance" ? "Manutenção do escritório" : tab === "reports" ? "Relatórios" : tab === "team" ? "Usuários e permissões" : "Histórico do estoque"}</h1></div>
-          <div className="topbar-actions"><DataToolsButton screen={tab} onImported={() => { void load(true); setDataVersion((value) => value + 1); }} />{currentUser?.active && currentUser.role !== "viewer" && <TimerBadge onOpenTask={openTask} />}{createActions.length > 0 && <MoreMenu label="Criar" title="Criar demanda, chamado, compromisso, ausência ou pedido da copa" icon={<Plus size={16} />} className="primary-button create-menu-button" actions={createActions.map((action) => { const Icon = action.icon ?? Plus; return { key: action.id, label: action.label, icon: <Icon size={15} />, onClick: action.run }; })} />}<CommandSearch onPick={openSearchHit} actions={quickActions} />{currentUser?.active && tab !== "community" && <ChatPanelButton unread={navCounts?.chat ?? 0} direct={navCounts?.chatDirect ?? 0} active={chatPanel} onClick={() => setChatPanel((value) => !value)} />}<NotificationsBell onOpenTask={openTask} onOpenTicket={openTicket} onOpenEvent={openAgenda} onOpenView={(view) => openView(view)} /><span className="role-chip">{currentUser ? roleLabel(currentUser.role) : "Carregando"}</span></div>
+          <div className="topbar-actions"><DataToolsButton screen={tab} onImported={() => { void load(true); setDataVersion((value) => value + 1); }} />{currentUser?.active && currentUser.role !== "viewer" && <TimerBadge onOpenTask={openTask} />}{createMenu.length > 0 && <MoreMenu label="Criar" title={createMenu.map((action) => action.label).join(", ")} icon={<Plus size={16} />} className="primary-button create-menu-button" actions={createMenu.map((action) => { const Icon = action.icon ?? Plus; return { key: action.id, label: action.label, icon: <Icon size={15} />, onClick: action.run }; })} />}<CommandSearch onPick={openSearchHit} actions={quickActions} />{currentUser?.active && tab !== "community" && <ChatPanelButton unread={navCounts?.chat ?? 0} direct={navCounts?.chatDirect ?? 0} active={chatPanel} onClick={() => setChatPanel((value) => !value)} />}<NotificationsBell onOpenTask={openTask} onOpenTicket={openTicket} onOpenEvent={openAgenda} onOpenView={(view) => openView(view)} /><span className="role-chip">{currentUser ? roleLabel(currentUser.role) : "Carregando"}</span></div>
         </header>
 
         <section key={dataVersion} className={`content ${tab === "community" ? "content-full" : ""}`}>
