@@ -44,6 +44,7 @@ import CalendarDays from "lucide-react/icons/calendar-days";
 import CommandSearch, { type QuickAction } from "./command-search";
 import { MoreMenu } from "./more-menu";
 import { requestCreate } from "./create-request";
+import { ErrorReporter } from "./error-reporter";
 import CalendarOff from "lucide-react/icons/calendar-off";
 import { OPEN_TASK_EVENT, useNavCounts } from "./sidebar-nav";
 import { PortalGlassNav } from "./portal-glass-nav";
@@ -385,6 +386,7 @@ export default function Home() {
 
   return (
     <div className="app-shell">
+      {currentUser?.active && <ErrorReporter />}
       <aside className={`sidebar glass-menu ${mobileMenu ? "open" : ""} ${menuExpanded ? "expanded" : ""}`}
         onMouseEnter={mobileScreen ? undefined : () => setMenuSoon(true)}
         onMouseLeave={mobileScreen ? undefined : (event) => { setMenuSoon(false); const focused = document.activeElement; if (focused instanceof HTMLElement && event.currentTarget.contains(focused)) focused.blur(); }}
