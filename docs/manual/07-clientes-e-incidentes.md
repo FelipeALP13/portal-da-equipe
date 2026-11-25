@@ -8,7 +8,15 @@ Abra **Clientes** no menu. A tela tem duas abas: **Clientes** e **Incidentes**.
 
 ### Para que serve
 
-A **ficha do cliente** reúne num lugar só: contato, pacote de horas, acessos aos sistemas, chamados, demandas e horas do mês. A lista de clientes vem de **Demandas → Clientes e projetos**.
+A **ficha do cliente** reúne num lugar só: contato, pacote de horas, acessos aos sistemas, chamados, demandas e horas do mês. É a mesma lista de clientes que aparece no campo **Cliente / Projeto** das demandas e dos chamados.
+
+### Cadastrar um cliente novo (administradores)
+
+1. Na lista de clientes, clique em **Novo cliente**.
+2. Digite o nome (ex.: "Padaria Exemplo") e clique em **Cadastrar** (ou aperte Enter). **Esc** ou **Cancelar** desiste.
+3. A ficha do cliente novo abre na hora. Use **Editar ficha** para preencher o contato e o pacote de horas.
+
+O nome não pode repetir o de um cliente que já existe. Também dá para cadastrar pela lista **Demandas → ⋯ → Clientes e projetos**, que permite ainda renomear e desativar, ou por planilha em **Importar / Exportar**.
 
 ### Consultar um cliente
 
@@ -68,6 +76,7 @@ No topo aparecem: **Em andamento**, **Falta análise**, **Incidentes (30 dias)**
 | Ação | Administrador | Membro | Somente leitura |
 | --- | --- | --- | --- |
 | Ver clientes, fichas e incidentes | Sim | Sim | Sim |
+| Cadastrar cliente novo | Sim | Não | Não |
 | Editar a ficha e cadastrar acessos | Sim | Não | Não |
 | Ver e copiar a senha de um acesso | Sim | Só se for do time dono do acesso | Só se for do time dono do acesso |
 | Registrar e atualizar incidentes | Sim | Sim | Não |

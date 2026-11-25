@@ -15,6 +15,8 @@ Como registrar (para quem altera o Portal):
 
 ## 2026-11-25
 
+- **Clientes**: botão **Novo cliente** na própria tela, para administradores; a ficha do cliente novo abre na hora ([Clientes e Incidentes](07-clientes-e-incidentes.md#cadastrar-um-cliente-novo-administradores)).
+- **Pessoas**: botão **Nova pessoa** na aba Pessoas, para administradores, com o mesmo cadastro de Usuários ([Pessoas e times](11-pessoas.md#cadastrar-uma-pessoa-administradores)).
 - Tema escuro: o aviso que aparece no canto da tela depois de salvar (ex.: "Perfil e acesso atualizados.") voltou a ter fundo verde-escuro com letra branca ([Primeiros passos](01-primeiros-passos.md#tema-claro-e-escuro)).
 - Tema escuro: as listas que abrem nos campos de escolha (como **Cliente / Projeto** na Nova demanda) agora têm fundo escuro e letra clara, em todas as telas ([Primeiros passos](01-primeiros-passos.md#tema-claro-e-escuro)).
 - Nova tela **Ajuda**, no fim do menu: o manual dentro do Portal, com índice de capítulos e busca ([Primeiros passos](01-primeiros-passos.md#ajuda-este-manual-no-portal)).

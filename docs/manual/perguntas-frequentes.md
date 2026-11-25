@@ -36,6 +36,17 @@ Só administradores excluem demandas, e a exclusão não tem volta pela tela. Fa
 **As horas de uma demanda antiga estão estranhas.**
 Se a demanda mostra "Horas importadas fora do normal: revise", corrija o valor em **Horas anteriores**. O aviso some ao salvar.
 
+## Cadastros
+
+**Como cadastro um cliente novo?**
+Em **Clientes**, botão **Novo cliente** (só administradores). Depois, use **Editar ficha** para o contato e o pacote de horas.
+
+**Como cadastro uma pessoa nova?**
+Em **Pessoas**, botão **Nova pessoa**, ou em **Usuários → Adicionar membro** (só administradores).
+
+**Posso criar uma categoria de demanda nova?**
+Ainda não: as categorias são uma lista fixa do Portal. Peça a quem mantém o sistema.
+
 ## Agenda
 
 **O sino não tocou no meu compromisso.**

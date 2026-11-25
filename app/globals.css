@@ -4651,3 +4651,11 @@ html[data-theme="dark"] .schedule-year { color: var(--brand-text); }
    a lista branca com a letra clara do tema escuro. Fundo e texto passam a seguir o tema em todo o Portal. */
 select option, select optgroup { color: var(--text); background-color: var(--surface); }
 select option:disabled { color: var(--text-muted); }
+
+/* Clientes: cadastrar um cliente novo direto na lista (administradores). */
+.clients-new-button { justify-content: center; }
+.clients-new { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-alt); }
+.clients-new input { height: 36px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); color: var(--text); background: var(--surface); font-size: var(--fs-sm); }
+.clients-new > div { display: flex; gap: 6px; }
+.clients-new > div button { flex: 1; }
+.clients-new small { color: var(--text-muted); font-size: var(--fs-xs); }

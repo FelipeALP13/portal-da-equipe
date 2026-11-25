@@ -44,7 +44,7 @@ async function post(payload: Record<string, unknown>) {
 
 const fold = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase("pt-BR");
 
-export default function PeopleView({ initialSearch = "", initialTab = "people" }: { initialSearch?: string; initialTab?: "people" | "assets" | "absences" }) {
+export default function PeopleView({ initialSearch = "", initialTab = "people", onAddPerson }: { initialSearch?: string; initialTab?: "people" | "assets" | "absences"; onAddPerson?: () => void }) {
   const [data, setData] = useState<PeopleData | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"people" | "teams" | "absences" | "onboarding" | "assets">(initialTab);
@@ -110,6 +110,7 @@ export default function PeopleView({ initialSearch = "", initialTab = "people" }
           {data.teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
           <option value="none">Sem time</option>
         </select>
+        {data.me.isAdmin && onAddPerson && <button className="primary-button people-new" onClick={onAddPerson} title="Cria o usuário e a senha inicial da pessoa"><Plus size={16} /> Nova pessoa</button>}
       </> : data.me.isAdmin && <button className="primary-button people-new" onClick={() => setEditingTeam("new")}><Plus size={16} /> Novo time</button>}
     </div>
 

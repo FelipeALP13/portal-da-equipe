@@ -10,7 +10,7 @@ Cada pessoa entra com a própria conta, e tudo o que ela faz fica registrado no 
 
 ### Cadastrar um usuário
 
-1. Abra **Usuários** e clique em **Adicionar membro**.
+1. Abra **Usuários** e clique em **Adicionar membro** (ou, em **Pessoas**, clique em **Nova pessoa**: é o mesmo cadastro).
 2. Na aba **Geral**, preencha **Nome**, **Usuário de acesso** (ex.: "ana"), **E-mail** (ex.: ana@empresa.com) e a **senha inicial** (8 ou mais caracteres, com letras e números).
 3. Escolha o **Perfil base**: **Administrador**, **Membro** ou **Somente leitura** (veja [Perfis de acesso](README.md#perfis-de-acesso)).
 4. Deixe o **Status** como **Ativo**.

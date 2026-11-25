@@ -55,6 +55,10 @@ export default function ClientsView({ onOpenTask, onOpenTicket }: { onOpenTask: 
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
+  // Novo cliente (administradores): o nome entra na mesma lista de "Cliente / Projeto" das demandas.
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -74,6 +78,28 @@ export default function ClientsView({ onOpenTask, onOpenTicket }: { onOpenTask: 
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
   }, [load]);
 
+  async function createClient(event: React.FormEvent) {
+    event.preventDefault();
+    const name = newName.trim();
+    if (!name) return;
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "saveClient", name }) });
+      const json = await response.json() as { error?: string; client?: { id: number } };
+      if (!response.ok || !json.client) throw new Error(json.error || "Não foi possível cadastrar o cliente.");
+      setCreating(false);
+      setNewName("");
+      setSearch("");
+      setSelected(json.client.id);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível cadastrar o cliente.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const list = useMemo(() => (data?.clients ?? []).filter((client) => !search.trim() || fold(`${client.name} ${client.contactName}`).includes(fold(search.trim()))), [data, search]);
 
   if (!data) return error ? <div className="alert error"><span>{error}</span></div> : <div className="loading-list">{[1, 2, 3].map((line) => <span key={line} />)}</div>;
@@ -89,13 +115,20 @@ export default function ClientsView({ onOpenTask, onOpenTicket }: { onOpenTask: 
     <div className="clients-layout">
       <aside className="clients-list">
         <label className="tasks-search"><Search size={14} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar cliente" /></label>
+        {data.me.isAdmin && (creating
+          ? <form className="clients-new" onSubmit={createClient}>
+            <input autoFocus aria-label="Nome do novo cliente" value={newName} maxLength={80} onChange={(event) => setNewName(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") { setCreating(false); setNewName(""); } }} placeholder="Nome do cliente" />
+            <div><button type="submit" className="primary-button" disabled={saving || !newName.trim()}>{saving ? "Salvando..." : "Cadastrar"}</button><button type="button" className="secondary-button" onClick={() => { setCreating(false); setNewName(""); }}>Cancelar</button></div>
+            <small>Depois, use “Editar ficha” para o contato e o pacote de horas.</small>
+          </form>
+          : <button type="button" className="secondary-button clients-new-button" onClick={() => setCreating(true)}><Plus size={14} /> Novo cliente</button>)}
         {list.length ? <ul>{list.map((client) => {
           const usage = hoursUsage(client.hoursThisMonth, client.monthlyHours);
           return <li key={client.id}><button className={`${selected === client.id ? "active" : ""} ${client.active ? "" : "inactive"}`} onClick={() => setSelected(client.id)}>
             <span className="clients-list-name"><strong>{client.name}</strong>{client.systemsDown > 0 && <em className="monitor-chip down" title="Sistema fora do ar">fora do ar</em>}</span>
             <small>{client.openTickets} chamado{client.openTickets === 1 ? "" : "s"} · {client.openTasks} demanda{client.openTasks === 1 ? "" : "s"}{client.monthlyHours ? <> · <b className={`usage-${usage.state}`}>{usage.percent}% do pacote</b></> : null}</small>
           </button></li>;
-        })}</ul> : <p className="muted">Nenhum cliente encontrado. A lista vem de Demandas → Clientes.</p>}
+        })}</ul> : <p className="muted">Nenhum cliente encontrado.{data.me.isAdmin ? " Use “Novo cliente” para cadastrar." : ""}</p>}
       </aside>
       {selected ? <ClientDetail key={selected} clientId={selected} onOpenTask={onOpenTask} onOpenTicket={onOpenTicket} onChanged={load} /> : <div className="empty-state"><span><Building2 /></span><h3>Escolha um cliente</h3><p>A ficha mostra os acessos aos sistemas, os chamados, as demandas e as horas do mês.</p></div>}
     </div>

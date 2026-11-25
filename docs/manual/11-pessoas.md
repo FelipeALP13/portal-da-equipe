@@ -15,6 +15,10 @@ O diretório da empresa: nome, cargo, contato, times, aniversário, tempo de cas
 - Busque por nome, cargo ou e-mail e filtre por time.
 - Clique numa pessoa para abrir o **perfil** (painel lateral): **Disponível hoje** ou ausente, e-mail, **Ligar**, times, contato, aniversário, data de entrada, férias e ausências marcadas, **elogios** recebidos e a atividade do último ano (mapa de calor com demandas concluídas, chamados resolvidos e horas lançadas).
 
+### Cadastrar uma pessoa (administradores)
+
+Na aba **Pessoas**, clique em **Nova pessoa**. Abre o mesmo cadastro de **Usuários**: nome, usuário de acesso, senha inicial, e-mail e perfil (veja [Administração](17-administracao.md#cadastrar-um-usuário)). Ao salvar, a pessoa já aparece no diretório. Depois, inclua-a num time na aba **Times**.
+
 ### Editar o seu perfil no diretório
 
 1. Na sua linha (marcada "(você)"), clique em **Editar**.
@@ -92,6 +96,7 @@ No topo: **Equipamentos**, **Licenças**, **Vencem em 30 dias** e **Com você** 
 | Ação | Administrador | Líder de time | Membro | Somente leitura |
 | --- | --- | --- | --- | --- |
 | Ver o diretório, perfis e times | Sim (inclusive pessoas desativadas) | Sim | Sim | Sim |
+| Cadastrar pessoa nova | Sim | Não | Não | Não |
 | Editar o próprio perfil no diretório | Sim | Sim | Sim | Sim |
 | Editar o perfil de outra pessoa | Sim | Não | Não | Não |
 | Criar e editar times, definir líderes | Sim | Não | Não | Não |
