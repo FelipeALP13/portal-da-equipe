@@ -2222,6 +2222,23 @@ i.timeline-today { position: absolute; top: 0; bottom: 0; width: 2px; background
 .my-day-block li > a { display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: var(--radius); color: white; background: #4f46e5; font-size: var(--fs-xs); font-weight: 700; text-decoration: none; }
 .my-day-block li.more { padding: 4px 8px; color: var(--text-faint); font-size: var(--fs-sm); }
 .my-day-calm { margin: 6px 0; color: var(--text-tertiary); font-size: var(--fs-base); line-height: 1.55; }
+/* Meu dia: "Revisar uma por vez". */
+.my-day-review-start { margin-left: auto; padding: 4px 8px; border: 0; border-radius: var(--radius-sm); color: var(--brand-text); background: transparent; font: inherit; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
+.my-day-review-start:hover, .my-day-review-start:focus-visible { background: var(--surface-alt); }
+.my-day-review { display: grid; gap: 12px; }
+.my-day-review > small { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.my-day-review article { display: grid; gap: 8px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-alt); }
+.my-day-review article strong { color: var(--ink); font-size: var(--fs-lg); line-height: 1.3; }
+.my-day-review-due { color: var(--brand-text); font-size: var(--fs-sm); font-weight: 700; }
+.my-day-review-due.late { color: var(--danger-text); }
+.my-day-review-open { justify-self: start; padding: 0; border: 0; color: var(--text-muted); background: none; font: inherit; font-size: var(--fs-sm); text-decoration: underline; cursor: pointer; }
+.my-day-review-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.my-day-review-back { justify-self: start; padding: 0; border: 0; color: var(--text-muted); background: none; font: inherit; font-size: var(--fs-sm); cursor: pointer; }
+.my-day-review-back:hover, .my-day-review-open:hover { color: var(--ink); }
+.my-day-review-error { margin: 0; color: var(--danger-text); font-size: var(--fs-sm); }
+.my-day-review.done h3 { margin: 0; font-size: var(--fs-lg); }
+.my-day-review.done p { margin: 0; color: var(--text-tertiary); }
+.my-day-review.done .secondary-button { justify-self: start; }
 .my-day-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 24px; border-top: 1px solid var(--line); }
 .my-day-foot label { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: var(--fs-sm); }
 .my-day-foot .primary-button { height: 38px; }

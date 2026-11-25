@@ -9,7 +9,13 @@ import Video from "lucide-react/icons/video";
 import X from "lucide-react/icons/x";
 import { isoToLocal, isMeetingJoinLink } from "./agenda";
 import { expandAgenda, type AgendaEvent } from "./use-agenda";
-import { dueState, taskCode } from "./tasks";
+import { dueState, nextWorkday, taskCode } from "./tasks";
+import { postTask } from "./task-shared";
+import Check from "lucide-react/icons/check";
+import SkipForward from "lucide-react/icons/skip-forward";
+import CalendarArrowUp from "lucide-react/icons/calendar-arrow-up";
+
+const fullDay = (iso: string) => new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`)).replace(".", "");
 import { ticketCode } from "./tickets";
 
 const SEEN_KEY = "portal.myday.seen";
@@ -44,6 +50,9 @@ export default function MyDay({ name, agenda, onClose, onOpenTask, onOpenTicket,
   const [tickets, setTickets] = useState<TicketRow[] | null>(null);
   const [meId, setMeId] = useState<number | null>(null);
   const [off, setOff] = useState(() => read(OFF_KEY) === "1");
+  const [review, setReview] = useState<{ done: number[]; postponed: number[]; skipped: number[] } | null>(null);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewError, setReviewError] = useState("");
   const today = todayInSaoPaulo();
 
   useEffect(() => {
@@ -81,6 +90,46 @@ export default function MyDay({ name, agenda, onClose, onOpenTask, onOpenTicket,
   const loading = tasks === null || tickets === null;
   const calm = !loading && !events.length && !myTasks.length && !myTickets.length;
 
+  // "Revisar uma por vez": passa pelas demandas que vencem, uma de cada vez (concluir, adiar ou pular).
+  const handled = review ? new Set([...review.done, ...review.postponed, ...review.skipped]) : new Set<number>();
+  const current = review ? myTasks.find((task) => !handled.has(task.id)) ?? null : null;
+  async function decide(kind: "done" | "postponed" | "skipped") {
+    if (!review || !current) return;
+    setReviewError("");
+    if (kind !== "skipped") {
+      setReviewBusy(true);
+      try { await postTask(kind === "done" ? { action: "updateTask", taskId: current.id, status: "done" } : { action: "updateTask", taskId: current.id, dueDate: nextWorkday(today) }); }
+      catch (err) { setReviewError(err instanceof Error ? err.message : "Não foi possível salvar."); setReviewBusy(false); return; }
+      setReviewBusy(false);
+    }
+    setReview({ ...review, [kind]: [...review[kind], current.id] });
+  }
+  function renderReview() {
+    if (!review) return null;
+    const total = myTasks.length;
+    if (!current) return <div className="my-day-review done">
+      <h3>Pronto!</h3>
+      <p>{[review.done.length && `${review.done.length} concluída${review.done.length === 1 ? "" : "s"}`, review.postponed.length && `${review.postponed.length} adiada${review.postponed.length === 1 ? "" : "s"} para ${fullDay(nextWorkday(today))}`, review.skipped.length && `${review.skipped.length} para depois`].filter(Boolean).join(", ") || "Nada mudou."}</p>
+      <button type="button" className="secondary-button" onClick={() => { setReview(null); setTasks((list) => list && list.map((task) => review.done.includes(task.id) ? { ...task, status: "done" } : review.postponed.includes(task.id) ? { ...task, dueDate: nextWorkday(today) } : task)); }}>Voltar ao resumo</button>
+    </div>;
+    const state = dueState(current.dueDate!, today);
+    return <div className="my-day-review" aria-live="polite">
+      <small>{handled.size + 1} de {total}</small>
+      <article>
+        <span className={`my-day-review-due ${state === "overdue" ? "late" : ""}`}>{state === "overdue" ? `Venceu em ${fullDay(current.dueDate!)}` : "Vence hoje"}</span>
+        <strong>{current.title}</strong>
+        <button type="button" className="my-day-review-open" onClick={() => go(() => onOpenTask(current.id))}>{taskCode(current.id)} · abrir a demanda</button>
+      </article>
+      {reviewError && <p className="my-day-review-error" role="alert">{reviewError}</p>}
+      <div className="my-day-review-actions">
+        <button type="button" className="secondary-button" disabled={reviewBusy} onClick={() => void decide("postponed")}><CalendarArrowUp size={15} /> Adiar para {fullDay(nextWorkday(today))}</button>
+        <button type="button" className="secondary-button" disabled={reviewBusy} onClick={() => void decide("skipped")}><SkipForward size={15} /> Próxima</button>
+        <button type="button" className="primary-button" disabled={reviewBusy} onClick={() => void decide("done")}><Check size={15} /> Concluir</button>
+      </div>
+      <button type="button" className="my-day-review-back" onClick={() => setReview(null)}>Voltar ao resumo</button>
+    </div>;
+  }
+
   return <div className="modal-layer"><button className="backdrop" onClick={onClose} aria-label="Fechar" /><section className="modal my-day" role="dialog" aria-label="Meu dia">
     <div className="my-day-head">
       <span className="my-day-sun"><Sun size={22} /></span>
@@ -88,13 +137,13 @@ export default function MyDay({ name, agenda, onClose, onOpenTask, onOpenTicket,
       <button type="button" className="my-day-close" onClick={onClose} aria-label="Fechar"><X /></button>
     </div>
     <div className="my-day-body">
-      {loading ? <div className="loading-list"><span /><span /></div> : calm ? <p className="my-day-calm">Nada marcado para hoje: sem compromissos, prazos vencendo ou chamados com você. Bom trabalho!</p> : <>
+      {review ? renderReview() : loading ? <div className="loading-list"><span /><span /></div> : calm ? <p className="my-day-calm">Nada marcado para hoje: sem compromissos, prazos vencendo ou chamados com você. Bom trabalho!</p> : <>
         {events.length > 0 && <div className="my-day-block">
           <h3><CalendarClock size={15} /> Agenda de hoje</h3>
           <ul>{events.map((event) => <li key={`${event.id}-${event.startsAt}`}><button onClick={() => go(() => onOpenAgenda(event.id))}><b>{isoToLocal(event.startsAt).time}</b><span>{event.title}</span></button>{isMeetingJoinLink(event.teamsUrl) && <a href={event.teamsUrl} target="_blank" rel="noopener noreferrer"><Video size={13} /> Entrar</a>}</li>)}</ul>
         </div>}
         {myTasks.length > 0 && <div className="my-day-block">
-          <h3><ListTodo size={15} /> Demandas que vencem</h3>
+          <h3><ListTodo size={15} /> Demandas que vencem<button type="button" className="my-day-review-start" onClick={() => { setReview({ done: [], postponed: [], skipped: [] }); setReviewError(""); }}>Revisar uma por vez</button></h3>
           <ul>{myTasks.slice(0, 6).map((task) => { const state = dueState(task.dueDate!, today); return <li key={task.id}><button onClick={() => go(() => onOpenTask(task.id))}><b className={state === "overdue" ? "late" : ""}>{state === "overdue" ? "vencida" : "hoje"}</b><span>{taskCode(task.id)} · {task.title}</span></button></li>; })}{myTasks.length > 6 && <li className="more">e mais {myTasks.length - 6}</li>}</ul>
         </div>}
         {myTickets.length > 0 && <div className="my-day-block">

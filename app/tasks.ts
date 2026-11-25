@@ -111,6 +111,13 @@ export function dueState(dueDate: string, today: string): DueState {
   return diff <= 3 ? "soon" : "later";
 }
 
+/** Próximo dia útil depois de `today` (sexta e fim de semana pulam para segunda). Usado no "Adiar" do Meu dia. */
+export function nextWorkday(today: string) {
+  const date = new Date(`${today}T12:00:00Z`);
+  do date.setUTCDate(date.getUTCDate() + 1); while (date.getUTCDay() === 0 || date.getUTCDay() === 6);
+  return date.toISOString().slice(0, 10);
+}
+
 function shortDate(isoDate: string) {
   const [, month, day] = isoDate.split("-");
   return `${day}/${month}`;
