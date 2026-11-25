@@ -4654,8 +4654,18 @@ select option:disabled { color: var(--text-muted); }
 
 /* Clientes: cadastrar um cliente novo direto na lista (administradores). */
 .clients-new-button { justify-content: center; }
-.clients-new { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-alt); }
+/* .clients-list form (janela antiga de Demandas) punha o formulário em linha: aqui ele fica em coluna. */
+.clients-list .clients-new { display: grid; flex-direction: initial; align-items: stretch; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-alt); }
 .clients-new input { height: 36px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); color: var(--text); background: var(--surface); font-size: var(--fs-sm); }
 .clients-new > div { display: flex; gap: 6px; }
 .clients-new > div button { flex: 1; }
 .clients-new small { color: var(--text-muted); font-size: var(--fs-xs); }
+
+/* Sino de avisos: painel mais largo, filtros que quebram linha (antes rolavam para o lado escondidos)
+   e mais texto de cada aviso (assunto em até 2 linhas, trecho do comentário em até 3). */
+.bell-panel { width: min(460px, calc(100vw - 24px)); max-height: min(640px, calc(100vh - 100px)); }
+.bell-filters { flex-wrap: wrap; overflow: visible; }
+.bell-text small { display: -webkit-box; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.bell-text em { -webkit-line-clamp: 3; }
+
+.client-head-actions { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }

@@ -34,6 +34,7 @@ const actions: Record<string, { label: string; group: AuditGroup; sensitive?: bo
   incident_deleted: { label: "Excluiu um incidente", group: "work", sensitive: true },
   giphy_key_saved: { label: "Mudou a chave da busca de GIFs", group: "access", sensitive: true },
   client_profile_updated: { label: "Editou a ficha de um cliente", group: "work" },
+  client_deleted: { label: "Excluiu um cliente", group: "work", sensitive: true },
   logout: { label: "Saiu do sistema", group: "access" },
   other_sessions_ended: { label: "Encerrou as sessões dos outros aparelhos", group: "access", sensitive: true },
   all_sessions_ended: { label: "Encerrou todas as próprias sessões", group: "access", sensitive: true },

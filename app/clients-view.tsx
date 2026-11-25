@@ -24,6 +24,9 @@ import { formatMinutes, ticketCode, ticketStatusLabels, ticketUrgencyLabels, typ
 import { downloadXlsx } from "./xlsx-writer";
 import { relativeTime } from "./task-shared";
 import { askConfirm } from "./confirm-dialog";
+import { MoreMenu } from "./more-menu";
+import Ban from "lucide-react/icons/ban";
+import RotateCcw from "lucide-react/icons/rotate-ccw";
 
 type Viewer = { id: number; isAdmin: boolean; canEdit: boolean; teamIds: number[] };
 type ClientRow = { id: number; name: string; active: boolean; monthlyHours: number | null; contactName: string; openTasks: number; openTickets: number; hoursThisMonth: number; systems: number; systemsDown: number };
@@ -45,6 +48,13 @@ async function post(payload: Record<string, unknown>) {
   const data = await response.json() as { error?: string; password?: string; result?: { ok: boolean; status: string; ms: number; error: string | null } };
   if (!response.ok) throw new Error(data.error || "Não foi possível concluir.");
   return data;
+}
+
+/** A lista de clientes é mantida pela rota de demandas (é a mesma de "Cliente / Projeto"). */
+async function clientListPost(payload: Record<string, unknown>) {
+  const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+  const data = await response.json().catch(() => ({})) as { error?: string; client?: { id: number } };
+  return { ok: response.ok, status: response.status, data };
 }
 
 const fold = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase("pt-BR");
@@ -85,9 +95,8 @@ export default function ClientsView({ onOpenTask, onOpenTicket }: { onOpenTask: 
     setSaving(true);
     setError("");
     try {
-      const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "saveClient", name }) });
-      const json = await response.json() as { error?: string; client?: { id: number } };
-      if (!response.ok || !json.client) throw new Error(json.error || "Não foi possível cadastrar o cliente.");
+      const { ok, data: json } = await clientListPost({ action: "saveClient", name });
+      if (!ok || !json.client) throw new Error(json.error || "Não foi possível cadastrar o cliente.");
       setCreating(false);
       setNewName("");
       setSearch("");
@@ -130,18 +139,43 @@ export default function ClientsView({ onOpenTask, onOpenTicket }: { onOpenTask: 
           </button></li>;
         })}</ul> : <p className="muted">Nenhum cliente encontrado.{data.me.isAdmin ? " Use “Novo cliente” para cadastrar." : ""}</p>}
       </aside>
-      {selected ? <ClientDetail key={selected} clientId={selected} onOpenTask={onOpenTask} onOpenTicket={onOpenTicket} onChanged={load} /> : <div className="empty-state"><span><Building2 /></span><h3>Escolha um cliente</h3><p>A ficha mostra os acessos aos sistemas, os chamados, as demandas e as horas do mês.</p></div>}
+      {selected ? <ClientDetail key={selected} clientId={selected} onOpenTask={onOpenTask} onOpenTicket={onOpenTicket} onChanged={load} onRemoved={async () => { setSelected(null); await load(); }} /> : <div className="empty-state"><span><Building2 /></span><h3>Escolha um cliente</h3><p>A ficha mostra os acessos aos sistemas, os chamados, as demandas e as horas do mês.</p></div>}
     </div>
   </div>;
 }
 
-function ClientDetail({ clientId, onOpenTask, onOpenTicket, onChanged }: { clientId: number; onOpenTask: (taskId: number) => void; onOpenTicket: (ticketId: number) => void; onChanged: () => Promise<void> }) {
+function ClientDetail({ clientId, onOpenTask, onOpenTicket, onChanged, onRemoved }: { clientId: number; onOpenTask: (taskId: number) => void; onOpenTicket: (ticketId: number) => void; onChanged: () => Promise<void>; onRemoved: () => Promise<void> }) {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [error, setError] = useState("");
   const [editingProfile, setEditingProfile] = useState(false);
   const [editingSystem, setEditingSystem] = useState<System | "new" | null>(null);
   const [reportMonth, setReportMonth] = useState(() => shiftMonth(todayMonth(), -1));
   const [reporting, setReporting] = useState(false);
+
+  async function setActive(active: boolean) {
+    if (!detail) return;
+    if (!active && !(await askConfirm(`Desativar o cliente “${detail.client.name}”? Ele sai das listas de escolha de demandas e chamados. O histórico continua guardado e dá para reativar depois.`, { confirmLabel: "Desativar", danger: false }))) return;
+    const { ok, data } = await clientListPost({ action: "saveClient", clientId, name: detail.client.name, active });
+    if (!ok) { setError(data.error || "Não foi possível mudar o cliente."); return; }
+    await Promise.all([load(), onChanged()]);
+  }
+
+  async function removeClient() {
+    if (!detail) return;
+    if (!(await askConfirm(`Excluir o cliente “${detail.client.name}”? Os acessos aos sistemas cadastrados na ficha também serão apagados. Não dá para desfazer.`))) return;
+    const { ok, status, data } = await clientListPost({ action: "deleteClient", clientId });
+    if (ok) { await onRemoved(); return; }
+    if (status === 409 && detail.client.active) {
+      // Tem histórico ligado: oferece desativar no lugar.
+      if (await askConfirm(data.error || "Este cliente tem registros ligados.", { title: "Não dá para excluir este cliente", confirmLabel: "Desativar cliente", danger: false })) {
+        const result = await clientListPost({ action: "saveClient", clientId, name: detail.client.name, active: false });
+        if (!result.ok) { setError(result.data.error || "Não foi possível desativar o cliente."); return; }
+        await Promise.all([load(), onChanged()]);
+      }
+      return;
+    }
+    setError(data.error || "Não foi possível excluir o cliente.");
+  }
 
   const load = useCallback(async () => {
     try {
@@ -185,7 +219,15 @@ function ClientDetail({ clientId, onOpenTask, onOpenTicket, onChanged }: { clien
       <span className="client-avatar"><Building2 size={20} /></span>
       <div><h2>{client.name}{!client.active && <small className="person-inactive">Desativado</small>}</h2>
         <p>{client.contactName ? <>{client.contactName}{client.contactEmail && <> · <a href={`mailto:${client.contactEmail}`}>{client.contactEmail}</a></>}{client.contactPhone && <> · {client.contactPhone}</>}</> : <span className="muted">Contato não informado</span>}</p></div>
-      {me.isAdmin && <button className="secondary-button" onClick={() => setEditingProfile(true)}><Pencil size={14} /> Editar ficha</button>}
+      {me.isAdmin && <span className="client-head-actions">
+        <button className="secondary-button" onClick={() => setEditingProfile(true)}><Pencil size={14} /> Editar ficha</button>
+        <MoreMenu title="Mais ações do cliente" actions={[
+          client.active
+            ? { key: "deactivate", label: "Desativar cliente", icon: <Ban size={15} />, title: "Sai das listas de escolha; demandas, chamados e o histórico ficam", onClick: () => void setActive(false) }
+            : { key: "reactivate", label: "Reativar cliente", icon: <RotateCcw size={15} />, onClick: () => void setActive(true) },
+          { key: "delete", label: "Excluir cliente", icon: <Trash2 size={15} />, onClick: () => void removeClient() },
+        ]} />
+      </span>}
     </header>
     {error && <div className="alert error"><span>{error}</span><button onClick={() => setError("")} aria-label="Fechar aviso"><X size={16} /></button></div>}
 

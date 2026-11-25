@@ -16,7 +16,14 @@ A **ficha do cliente** reúne num lugar só: contato, pacote de horas, acessos a
 2. Digite o nome (ex.: "Padaria Exemplo") e clique em **Cadastrar** (ou aperte Enter). **Esc** ou **Cancelar** desiste.
 3. A ficha do cliente novo abre na hora. Use **Editar ficha** para preencher o contato e o pacote de horas.
 
-O nome não pode repetir o de um cliente que já existe. Também dá para cadastrar pela lista **Demandas → ⋯ → Clientes e projetos**, que permite ainda renomear e desativar, ou por planilha em **Importar / Exportar**.
+O nome não pode repetir o de um cliente que já existe.
+
+### Desativar ou excluir um cliente (administradores)
+
+Na ficha do cliente, clique em **Mais** (ao lado de **Editar ficha**):
+
+- **Desativar cliente**: o cliente sai das listas de escolha de demandas e chamados, mas demandas, chamados, horas e o histórico continuam guardados. Ele aparece apagado na lista, com a marca **Desativado**. Para voltar, use **Reativar cliente**.
+- **Excluir cliente**: apaga o cliente e os acessos aos sistemas cadastrados na ficha. Não dá para desfazer. Só funciona para clientes **sem nada ligado** (por exemplo, cadastrados por engano). Se o cliente tiver demandas, chamados, projetos ou artigos da base, o Portal mostra quantos são e oferece **Desativar cliente** no lugar, para não perder o histórico. Também dá para cadastrar pela lista **Demandas → ⋯ → Clientes e projetos**, que permite ainda renomear e desativar, ou por planilha em **Importar / Exportar**.
 
 ### Consultar um cliente
 
@@ -77,6 +84,7 @@ No topo aparecem: **Em andamento**, **Falta análise**, **Incidentes (30 dias)**
 | --- | --- | --- | --- |
 | Ver clientes, fichas e incidentes | Sim | Sim | Sim |
 | Cadastrar cliente novo | Sim | Não | Não |
+| Desativar, reativar ou excluir cliente | Sim | Não | Não |
 | Editar a ficha e cadastrar acessos | Sim | Não | Não |
 | Ver e copiar a senha de um acesso | Sim | Só se for do time dono do acesso | Só se for do time dono do acesso |
 | Registrar e atualizar incidentes | Sim | Sim | Não |

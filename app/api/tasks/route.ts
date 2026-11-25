@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray, min, sql } from "drizzle-orm";
 import { getDb } from "../../../db";
-import { clients, members, notifications, projects, taskChecklistItems, taskEvents, taskLegacyCodes, taskPeople, tasks, taskTemplates, teamMembers, teams, timeEntries } from "../../../db/schema";
+import { clients, kbArticles, members, notifications, projects, taskChecklistItems, tickets, taskEvents, taskLegacyCodes, taskPeople, tasks, taskTemplates, teamMembers, teams, timeEntries } from "../../../db/schema";
 import { cleanItem, MAX_CHECKLIST_ITEMS, parseItems } from "../../checklists";
 import { totalHours } from "../../time-entries";
 import { commentRecipients, findMentions, snippet, type NotificationKind } from "../../notifications";
@@ -325,6 +325,30 @@ export async function POST(request: Request) {
         : await db.insert(clients).values(values).returning();
       if (!client) return json({ error: "Cliente/projeto não encontrado." }, 404);
       return json({ client }, clientId ? 200 : 201);
+    }
+
+    // Excluir cliente: só sem nada ligado. Com histórico, o caminho é desativar (sai das listas e o histórico fica).
+    if (action === "deleteClient") {
+      if (!isAdmin(member)) return json({ error: "Somente administradores mantêm a lista de clientes." }, 403);
+      const clientId = Number(body.clientId) || 0;
+      const [client] = await db.select().from(clients).where(eq(clients.id, clientId)).limit(1);
+      if (!client) return json({ error: "Cliente não encontrado." }, 404);
+      const [[taskCount], [projectCount], [articleCount], [ticketCount]] = await Promise.all([
+        db.select({ count: sql<number>`count(*)` }).from(tasks).where(eq(tasks.clientId, clientId)),
+        db.select({ count: sql<number>`count(*)` }).from(projects).where(eq(projects.clientId, clientId)),
+        db.select({ count: sql<number>`count(*)` }).from(kbArticles).where(eq(kbArticles.clientId, clientId)),
+        db.select({ count: sql<number>`count(*)` }).from(tickets).where(sql`lower(${tickets.client}) = lower(${client.name})`),
+      ]);
+      const linked = [
+        [Number(taskCount?.count ?? 0), "demanda", "demandas"],
+        [Number(ticketCount?.count ?? 0), "chamado", "chamados"],
+        [Number(projectCount?.count ?? 0), "projeto", "projetos"],
+        [Number(articleCount?.count ?? 0), "artigo da base", "artigos da base"],
+      ].filter(([count]) => Number(count) > 0).map(([count, one, many]) => `${count} ${count === 1 ? one : many}`);
+      if (linked.length) return json({ error: `${client.name} tem registros ligados (${linked.join(", ")}). Para não perder esse histórico, desative o cliente em vez de excluir.`, linked }, 409);
+      await db.delete(clients).where(eq(clients.id, clientId));
+      await writeAudit(db, { actorUserId: member.userId, actorName: member.name, action: "client_deleted", targetType: "client", targetId: clientId, details: client.name }).catch((error) => console.error("audit log failed", error));
+      return json({ ok: true });
     }
 
     // Repetir a demanda: semanal ou mensal, com prazo opcional.

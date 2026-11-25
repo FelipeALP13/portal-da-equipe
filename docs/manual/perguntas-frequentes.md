@@ -41,8 +41,11 @@ Se a demanda mostra "Horas importadas fora do normal: revise", corrija o valor e
 **Como cadastro um cliente novo?**
 Em **Clientes**, botão **Novo cliente** (só administradores). Depois, use **Editar ficha** para o contato e o pacote de horas.
 
+**Como excluo um cliente?**
+Na ficha do cliente, **Mais → Excluir cliente** (só administradores). Se ele já tiver demandas, chamados, projetos ou artigos, o Portal não exclui e oferece **Desativar**: ele some das listas de escolha e o histórico fica guardado.
+
 **Como cadastro uma pessoa nova?**
-Em **Pessoas**, botão **Nova pessoa**, ou em **Usuários → Adicionar membro** (só administradores).
+Em **Usuários → Adicionar membro** (só administradores). Ao salvar, a pessoa já aparece em **Pessoas**.
 
 **Posso criar uma categoria de demanda nova?**
 Ainda não: as categorias são uma lista fixa do Portal. Peça a quem mantém o sistema.
