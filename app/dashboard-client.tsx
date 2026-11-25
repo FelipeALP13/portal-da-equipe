@@ -358,8 +358,9 @@ export default function Home() {
     { id: "new-absence", label: "Pedir ausência", hint: "Criar", keywords: "ferias folga atestado ausencia licenca", icon: CalendarOff, run: () => { openView("absences"); requestCreate("absence"); } },
     { id: "new-copa", label: "Pedido da copa", hint: "Criar", keywords: "copa cafe pedir item lanche faltando", icon: Coffee, run: () => { go("requests", true); requestCreate("copa"); } },
   ] : [];
-  // Na Visão geral, Nova demanda e Abrir chamado já têm botões próprios: lá o "+ Criar" fica só com o resto.
-  const createMenu = tab === "hub" ? createActions.filter((action) => action.id !== "new-task" && action.id !== "new-ticket") : createActions;
+  // O "+ Criar" não repete o que a tela aberta já cria com botão próprio (na Visão geral: demanda e chamado).
+  const createHidden: string[] = tab === "hub" ? ["new-task", "new-ticket"] : tab === "tasks" ? ["new-task"] : tab === "tickets" ? ["new-ticket"] : tab === "agenda" ? ["new-event"] : tab === "requests" ? ["new-copa"] : tab === "people" && subTab.people === "absences" ? ["new-absence"] : [];
+  const createMenu = createActions.filter((action) => !createHidden.includes(action.id));
   const quickActions: QuickAction[] = [
     ...createActions,
     { id: "go-hub", label: "Visão geral", hint: "Ir para", keywords: "inicio home resumo painel", icon: Gauge, run: () => go("hub") },
