@@ -421,9 +421,9 @@ main { min-height: 100vh; margin-left: 248px; }
 .schedule-member-list span { padding: 7px 10px; border: 1px solid color-mix(in srgb,var(--team) 20%,var(--surface)); border-radius: var(--radius-xl); color: var(--team); background: rgba(255,255,255,.74); font-size: var(--fs-xs); font-weight: 700; }
 .schedule-hero-date { display: grid; align-content: center; justify-items: center; min-height: 145px; padding: 18px; border-radius: var(--radius-xl); color: white; background: var(--team); text-align: center; box-shadow: 0 12px 28px color-mix(in srgb,var(--team) 22%,transparent); }
 .schedule-hero-date svg { width: 26px; height: 26px; margin-bottom: 9px; opacity: .9; }
-.schedule-hero-date small { font-size: var(--fs-2xs); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; opacity: .74; }
+.schedule-hero-date small { font-size: var(--fs-2xs); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; opacity: .92; }
 .schedule-hero-date strong { margin-top: 4px; font-size: var(--fs-md); }
-.schedule-hero-date span { margin-top: 6px; font-size: var(--fs-2xs); opacity: .72; }
+.schedule-hero-date span { margin-top: 6px; font-size: var(--fs-2xs); opacity: .9; }
 .schedule-teams { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 13px; margin-top: 14px; }
 .schedule-team-card { --team: #6f5aa6; --team-soft: #f4f0fb; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius-xl); background: var(--surface); }
 .schedule-team-card.orange { --team: #96520f; --team-soft: #fff3e7; }
@@ -1636,7 +1636,6 @@ mark.mention { padding: 0 2px; border-radius: 4px; color: var(--brand-text); bac
 .calendar-day { display: flex; flex-direction: column; gap: 2px; min-height: 104px; min-width: 0; padding: 6px; border: 0; color: var(--ink); background: var(--surface); text-align: left; cursor: pointer; }
 .calendar-day:hover { background: #fafbff; }
 .calendar-day.outside { background: var(--surface-alt); }
-.calendar-day.outside .calendar-number { color: #c3c9d3; }
 .calendar-day.selected { box-shadow: inset 0 0 0 2px var(--brand); }
 .calendar-number { align-self: flex-end; width: 24px; height: 24px; border-radius: 50%; font-size: var(--fs-sm); font-weight: 700; line-height: 24px; text-align: center; }
 .calendar-day.today .calendar-number { color: white; background: var(--brand); }
@@ -2224,7 +2223,6 @@ i.timeline-today { position: absolute; top: 0; bottom: 0; width: 2px; background
 .calendar-grid > :nth-last-child(-n+7) { border-bottom: 0; }
 .calendar-day.weekend { background: var(--surface-alt); }
 .calendar-day.outside { background: #f5f6f8; }
-.calendar-day.outside .calendar-chip { opacity: .55; }
 .calendar-day:hover { background: var(--brand-softer); }
 .calendar-number { align-self: flex-start; display: grid; width: 28px; height: 28px; margin-bottom: 2px; place-items: center; color: #101828; font-size: var(--fs-base); font-weight: 700; line-height: 1; }
 .calendar-day.outside .calendar-number { color: var(--text-muted); font-weight: 600; }
@@ -2988,7 +2986,7 @@ html[data-theme="dark"] .community {
 .community .cv-row-bottom small b { color: var(--cv-text); font-weight: 600; }
 .community .cv-row-bottom em { flex: none; min-width: 20px; padding: 1px 7px; border-radius: 10px; color: white; background: var(--cv-accent); font-size: var(--fs-xs); font-style: normal; font-weight: 700; text-align: center; }
 .community .cv-row.unread .cv-row-top strong, .community .cv-row.unread .cv-row-bottom small { color: var(--cv-strong); font-weight: 700; }
-.community .cv-row.unread .cv-row-top time { color: var(--cv-accent); font-weight: 600; }
+.community .cv-row.unread .cv-row-top time { color: var(--brand-text); font-weight: 600; }
 .community .cv-head-icon { display: grid; width: 38px; height: 38px; flex: none; place-items: center; border-radius: var(--radius-md); color: var(--cv-accent); background: var(--cv-accent-soft); }
 .community .cv-head-icon.big { width: 56px; height: 56px; border-radius: var(--radius-xl); }
 .community .cv-more { display: block; margin: 6px 10px 0; padding: 0; border: 0; color: var(--cv-muted); background: none; font-size: var(--fs-sm); }
@@ -4383,6 +4381,13 @@ html[data-theme="dark"] .urgency-badge.high { color: #fdba8c; }
 html body, html body :is(button, input, select, textarea) { font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
 html body .topbar h1, html body .section-heading h2, html body .hub-heading, html body .login-card h1, html body .login-welcome h1, html body .brand-band h2, html body .overview-hero .hero-copy h2, html body .hero-status strong, html body .hub-stat strong, html body .ticket-stats strong, html body .stat-card strong { font-family: var(--font-display); }
 html[data-theme="dark"] .filters button.active { color: var(--on-brand); background: var(--brand); }
+/* Contraste no tema escuro: o texto na cor da equipe precisa de um tom claro (o escuro some no fundo escuro). */
+html[data-theme="dark"] :is(.schedule-team-card, .schedule-week) { --team: #b9a8ea; }
+html[data-theme="dark"] :is(.schedule-team-card, .schedule-week).orange { --team: #f2a463; }
+html[data-theme="dark"] :is(.schedule-team-card, .schedule-week).blue { --team: #8fb4ff; }
+html[data-theme="dark"] :is(.schedule-team-card, .schedule-week).green { --team: #7fcf9a; }
+html[data-theme="dark"] :is(.schedule-team-card, .schedule-week).red { --team: #f2928b; }
+html[data-theme="dark"] .schedule-year { color: var(--brand-text); }
 @media (max-width: 760px) {
   .brand-band .brand-stroke { inset: auto 0 112px auto; width: 58%; height: 76px; opacity: .8; }
   .overview-hero .brand-stroke { display: none; }

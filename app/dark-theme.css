@@ -159,7 +159,6 @@ html[data-theme="dark"] { --chart-grid: #263244; --chart-baseline: #495669; }
 :where(html[data-theme="dark"]) .checklist-add input:focus { box-shadow: 0 0 0 3px #1a2a46; }
 :where(html[data-theme="dark"]) .template-pick { background: #141e36; }
 :where(html[data-theme="dark"]) .calendar-day:hover { background: #141a34; }
-:where(html[data-theme="dark"]) .calendar-day.outside .calendar-number { color: #6c7b93; }
 :where(html[data-theme="dark"]) .calendar-day.today .calendar-number { color: #ffffff; }
 :where(html[data-theme="dark"]) .calendar-chip.schedule { color: #a386ec; }
 :where(html[data-theme="dark"]) .calendar-chip.schedule.orange { background: #3e2b18; }
