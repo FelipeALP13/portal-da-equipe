@@ -101,8 +101,9 @@ function emit(rules) {
   const lines = [];
   for (const rule of rules) {
     if (rule.at) { const inner = emit(rule.rules); if (inner.length) lines.push(`${rule.at} {`, ...inner.map((line) => `  ${line}`), "}"); continue; }
-    // O menu lateral, e a tela de login já foram desenhados para fundo escuro/colorido.
-    if (/\.sidebar|\.brand|\.nav-|\.login-|\.hero-status|\.overview-hero|\.community/.test(rule.selector)) continue;
+    // O menu lateral, a tela de login e o aviso flutuante (.toast: verde-escuro com letra branca) já foram
+    // desenhados para fundo escuro/colorido: ficam iguais nos dois temas.
+    if (/\.sidebar|\.brand|\.nav-|\.login-|\.hero-status|\.overview-hero|\.community|\.toast/.test(rule.selector)) continue;
     const declarations = rule.body.replace(/\/\*[\s\S]*?\*\//g, "").split(";").map((entry) => entry.trim()).filter(Boolean).map((entry) => {
       const colon = entry.indexOf(":");
       if (colon < 0) return null;

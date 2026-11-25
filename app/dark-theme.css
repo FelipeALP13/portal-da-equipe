@@ -77,7 +77,6 @@ html[data-theme="dark"] { --brand-text: #6c95e4; --brand-soft: #17233d; --brand-
 :where(html[data-theme="dark"]) .modal-actions .modal-delete:hover { border-color: #6d2f2a; background: #3c1917; }
 :where(html[data-theme="dark"]) .planning-note { color: #b6c0ba; background: #233223; }
 :where(html[data-theme="dark"]) .alert.error { border: 1px solid #6a3028; color: #cd685d; background: #3d1c17; }
-:where(html[data-theme="dark"]) .toast { color: #ffffff; background: #c4dfd0; }
 :where(html[data-theme="dark"]) .modal { border: 1px solid rgba(19, 27, 40, .5); }
 :where(html[data-theme="dark"]) .member-tabs { background: #1d2b1d; }
 :where(html[data-theme="dark"]) .member-tabs button { color: #b9b5b1; }
