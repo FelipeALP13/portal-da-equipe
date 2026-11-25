@@ -1293,8 +1293,26 @@ mark.mention { padding: 0 2px; border-radius: 4px; color: var(--brand-text); bac
 .project-table { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
 .project-head, .project-row { display: grid; grid-template-columns: minmax(0,2.4fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 90px; align-items: center; gap: 12px; padding: 10px 14px; }
 .project-head { color: var(--text-faint); background: var(--surface-alt); font-size: var(--fs-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
-.project-row { width: 100%; border: 0; border-top: 1px solid var(--border-subtle); color: var(--ink); background: var(--surface); font-size: var(--fs-sm); text-align: left; cursor: pointer; }
+.project-row { width: 100%; border: 0; color: var(--ink); background: var(--surface); font-size: var(--fs-sm); text-align: left; cursor: pointer; }
 .project-row:hover { background: var(--surface-alt); }
+/* Seta à esquerda da linha: abre as demandas em aberto do projeto ali mesmo. */
+.project-head { grid-template-columns: 22px minmax(0,2.4fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 90px; }
+.project-entry { display: grid; grid-template-columns: 48px minmax(0,1fr); border-top: 1px solid var(--border-subtle); background: var(--surface); }
+.project-entry .project-row { padding-left: 0; }
+.project-expand { display: grid; place-items: center; width: 32px; height: 32px; align-self: center; justify-self: end; margin-right: 4px; border: 0; border-radius: var(--radius-sm); color: var(--text-muted); background: transparent; cursor: pointer; }
+.project-expand:hover, .project-expand:focus-visible { color: var(--ink); background: var(--surface-alt); }
+.project-expand svg { transition: transform .15s ease; }
+.project-entry.expanded .project-expand svg { transform: rotate(90deg); }
+.project-pending { grid-column: 1 / -1; padding: 2px 14px 12px 48px; }
+.project-pending ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.project-pending button { display: grid; grid-template-columns: 18px auto minmax(0,1fr) 130px 120px; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: var(--radius-sm); color: var(--ink); background: var(--surface-alt); font: inherit; font-size: var(--fs-sm); text-align: left; cursor: pointer; }
+.project-pending button:hover, .project-pending button:focus-visible { background: var(--surface-sunken); }
+.project-pending-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-pending-owner { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text-muted); font-size: var(--fs-xs); }
+.project-pending-due { color: var(--text-muted); font-size: var(--fs-xs); text-align: right; }
+.project-pending-due.late { color: var(--danger-text); font-weight: 700; }
+.project-pending .muted { margin: 4px 0 0; font-size: var(--fs-sm); }
+@media (prefers-reduced-motion: reduce) { .project-expand svg { transition: none; } }
 .project-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .project-name > span:last-child { display: flex; min-width: 0; flex-direction: column; }
 .project-name strong { overflow: hidden; font-size: var(--fs-base); text-overflow: ellipsis; white-space: nowrap; }
@@ -1372,6 +1390,10 @@ mark.mention { padding: 0 2px; border-radius: 4px; color: var(--brand-text); bac
   .project-form { grid-template-columns: 1fr; }
   .status-bar-row { grid-template-columns: 120px minmax(0,1fr) 56px; }
   .project-row > :nth-child(3), .project-row > :nth-child(6) { display: none; }
+  .project-entry { grid-template-columns: 40px minmax(0,1fr); }
+  .project-pending { padding-left: 12px; }
+  .project-pending button { grid-template-columns: 18px minmax(0,1fr) auto; }
+  .project-pending .task-code, .project-pending-owner { display: none; }
 }
 
 /* Apontamento de horas na demanda */

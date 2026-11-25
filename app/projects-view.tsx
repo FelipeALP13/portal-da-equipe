@@ -11,8 +11,9 @@ import Search from "lucide-react/icons/search";
 import Trash2 from "lucide-react/icons/trash-2";
 import X from "lucide-react/icons/x";
 import { isClosedProject, projectCode, projectFarolEmoji, projectFarolLabels, projectFarois, projectPhaseLabels, projectPhases, projectProgress, type ProjectFarol, type ProjectPhase } from "./projects";
-import { AvatarStack, PeoplePicker, StatusIcon } from "./tasks-view";
-import { taskCode, taskStatuses, taskStatusLabels, type TaskStatus } from "./tasks";
+import { Avatar, AvatarStack, PeoplePicker, StatusIcon } from "./tasks-view";
+import ChevronRight from "lucide-react/icons/chevron-right";
+import { isClosedStatus, taskCode, taskStatuses, taskStatusLabels, type TaskStatus } from "./tasks";
 import ProjectGantt, { ProjectPlanPanel, type GanttProject, type Milestone } from "./project-gantt";
 import GanttChart from "lucide-react/icons/gantt-chart";
 import LayoutList from "lucide-react/icons/layout-list";
@@ -20,7 +21,7 @@ import { askConfirm } from "./confirm-dialog";
 
 type Person = { id: number; name: string; avatarIcon: string; avatarKey: string | null };
 type Client = { id: number; name: string; active: boolean };
-type LinkedTask = { id: number; title: string; status: TaskStatus; dueDate: string | null };
+type LinkedTask = { id: number; title: string; status: TaskStatus; dueDate: string | null; assigneeId: number | null };
 type Project = {
   id: number; name: string; description: string; clientId: number | null; status: TaskStatus; farol: ProjectFarol; phase: ProjectPhase;
   deadlineLabel: string; startDate: string | null; endForecast: string; notes: string; updatedAt: string; people: number[]; tasks: LinkedTask[];
@@ -92,6 +93,10 @@ export default function ProjectsView({ onOpenTask, openRequest = null, onOpenReq
 
   const clientsById = useMemo(() => new Map((data?.clients ?? []).map((client) => [client.id, client])), [data]);
   const membersById = useMemo(() => new Map((data?.members ?? []).map((member) => [member.id, member])), [data]);
+  // Linhas abertas na lista: mostram as demandas em aberto sem abrir o painel do projeto.
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set());
+  const toggleExpanded = (id: number) => setExpandedIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
   const visible = useMemo(() => (data?.projects ?? []).filter((project) => {
     const closed = isClosedProject(project);
     if (scope === "active" && closed) return false;
@@ -175,17 +180,31 @@ export default function ProjectsView({ onOpenTask, openRequest = null, onOpenReq
     {visible.length > 0 && view === "timeline" ? <ProjectGantt projects={visible.map((project) => toGantt(project, (id) => (id ? clientsById.get(id)?.name ?? "" : "")))} canEdit={data.me.canEdit} onOpen={setOpenId}
       onMove={async (id, startDate, endDate) => { setError(""); try { await post({ action: "moveProject", projectId: id, startDate, endDate }); } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível mudar as datas."); } await load(); }} /> : visible.length === 0 ? <div className="empty-state"><span><FolderKanban /></span><h3>{data.projects.length ? "Nenhum projeto com esses filtros" : "Nenhum projeto ainda"}</h3><p>{data.projects.length ? "Troque os filtros ou a busca." : "Importe a planilha da Liderança em Demandas → Importar planilhas, ou crie o primeiro projeto."}</p></div> : (
       <div className="project-table">
-        <div className="project-head"><span>Projeto</span><span>Fase</span><span>Status</span><span>Prazo</span><span>Demandas</span><span>Responsáveis</span></div>
+        <div className="project-head"><span aria-hidden="true" /><span>Projeto</span><span>Fase</span><span>Status</span><span>Prazo</span><span>Demandas</span><span>Responsáveis</span></div>
         {visible.map((project) => {
           const client = project.clientId ? clientsById.get(project.clientId) : null;
-          return <button key={project.id} className="project-row" onClick={() => setOpenId(project.id)}>
+          const expanded = expandedIds.has(project.id);
+          const pending = project.tasks.filter((task) => !isClosedStatus(task.status)).sort((a, b) => (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999"));
+          return <div key={project.id} className={`project-entry ${expanded ? "expanded" : ""}`}>
+            <button type="button" className="project-expand" aria-expanded={expanded} aria-controls={`project-pending-${project.id}`} aria-label={`${expanded ? "Esconder" : "Ver"} demandas em aberto de ${project.name}`} title={expanded ? "Esconder demandas" : "Ver demandas em aberto"} onClick={() => toggleExpanded(project.id)}><ChevronRight size={16} /></button>
+            <button className="project-row" onClick={() => setOpenId(project.id)}>
             <span className="project-name"><FarolDot farol={project.farol} /><span><strong>{project.name}</strong><small>{projectCode(project.id)}{client ? ` · ${client.name}` : ""}</small></span></span>
             <span className="project-phase">{projectPhaseLabels[project.phase]}</span>
             <span className="project-status"><StatusIcon status={project.status} />{taskStatusLabels[project.status]}</span>
             <span className="project-deadline">{project.deadlineLabel || "—"}{project.endForecast && <small>{project.endForecast.match(/^\d{4}-/) ? `até ${fullDate(project.endForecast)}` : project.endForecast}</small>}</span>
             <Progress statuses={project.tasks.map((task) => task.status)} />
             <AvatarStack ids={project.people} membersById={membersById} />
-          </button>;
+            </button>
+            {expanded && <div className="project-pending" id={`project-pending-${project.id}`}>
+              {pending.length ? <ul>{pending.map((task) => { const owner = task.assigneeId ? membersById.get(task.assigneeId) : null; const late = Boolean(task.dueDate && task.dueDate < today); return <li key={task.id}>
+                <button type="button" onClick={() => onOpenTask(task.id)}>
+                  <StatusIcon status={task.status} /><span className="task-code">{taskCode(task.id)}</span><span className="project-pending-title">{task.title}</span>
+                  <span className="project-pending-owner">{owner ? <><Avatar member={owner} size={20} />{owner.name.split(" ")[0]}</> : "Sem responsável"}</span>
+                  <span className={`project-pending-due ${late ? "late" : ""}`}>{task.dueDate ? `${late ? "Venceu " : ""}${fullDate(task.dueDate)}` : "Sem prazo"}</span>
+                </button>
+              </li>; })}</ul> : <p className="muted">{project.tasks.length ? "Todas as demandas deste projeto estão concluídas." : "Nenhuma demanda ligada. Abra o projeto para ligar as demandas."}</p>}
+            </div>}
+          </div>;
         })}
       </div>
     )}

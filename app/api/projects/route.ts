@@ -43,7 +43,7 @@ export async function GET() {
     const [projectRows, peopleRows, taskRows, memberRows, clientRows] = await Promise.all([
       db.select().from(projects).orderBy(asc(projects.name)),
       db.select().from(projectPeople),
-      db.select({ id: tasks.id, title: tasks.title, status: tasks.status, projectId: tasks.projectId, dueDate: tasks.dueDate, clientId: tasks.clientId }).from(tasks),
+      db.select({ id: tasks.id, title: tasks.title, status: tasks.status, projectId: tasks.projectId, dueDate: tasks.dueDate, clientId: tasks.clientId, assigneeId: tasks.assigneeId }).from(tasks),
       db.select({ id: members.id, name: members.name, avatarIcon: members.avatarIcon, avatarKey: members.avatarKey }).from(members).where(eq(members.active, true)).orderBy(asc(members.name)),
       db.select({ id: clients.id, name: clients.name, active: clients.active }).from(clients).orderBy(asc(clients.name)),
     ]);
@@ -51,7 +51,7 @@ export async function GET() {
       projects: projectRows.map((project) => ({
         ...project,
         people: peopleRows.filter((row) => row.projectId === project.id).map((row) => row.memberId),
-        tasks: taskRows.filter((task) => task.projectId === project.id).map((task) => ({ id: task.id, title: task.title, status: task.status, dueDate: task.dueDate })),
+        tasks: taskRows.filter((task) => task.projectId === project.id).map((task) => ({ id: task.id, title: task.title, status: task.status, dueDate: task.dueDate, assigneeId: task.assigneeId })),
         milestones: milestoneRows.filter((row) => row.projectId === project.id).map((row) => ({ id: row.id, title: row.title, date: row.date, done: row.done })),
         dependsOn: dependencyRows.filter((row) => row.projectId === project.id).map((row) => row.dependsOnId),
       })),
