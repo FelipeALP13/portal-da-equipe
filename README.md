@@ -13,6 +13,7 @@ Tudo pelo `scripts/cloudflare.mjs`. Os nomes do banco e do armazenamento ficam e
 3. A cada versão nova: `node scripts/cloudflare.mjs publicar` (build, migrações novas no banco de produção, publicação).
 4. Primeiro acesso: defina um código de instalação com `wrangler secret put SETUP_TOKEN --name portaldaequipe` (24+ caracteres). Sem ele, ninguém consegue criar o administrador. Depois de criar, apague com `wrangler secret delete SETUP_TOKEN --name portaldaequipe`.
 5. Backup completo: `node scripts/cloudflare.mjs backup` (arquivo `.sql` em `backups/`, que não vai para o Git). No painel da Cloudflare (D1 → Time Travel) dá para voltar o banco a qualquer momento dos últimos 7 dias (plano gratuito) ou 30 dias (plano pago), e o Console roda SQL direto.
+   - Cópia semanal automática: a tarefa do Windows "Portal da Equipe - backup semanal" roda `node scripts/backup-semanal.mjs` toda segunda às 12h (se o computador estiver desligado, roda quando ligar). Guarda as 12 cópias mais novas em `backups/` e anota cada resultado em `backups/backup.log`. Se aparecer "FALHOU", entre de novo na Cloudflare com `node node_modules/wrangler/bin/wrangler.js login`.
 
 ### Ambiente de teste
 
