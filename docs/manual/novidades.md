@@ -15,6 +15,7 @@ Como registrar (para quem altera o Portal):
 
 ## 2026-11-25
 
+- Tema escuro: as listas que abrem nos campos de escolha (como **Cliente / Projeto** na Nova demanda) agora têm fundo escuro e letra clara, em todas as telas ([Primeiros passos](01-primeiros-passos.md#tema-claro-e-escuro)).
 - Nova tela **Ajuda**, no fim do menu: o manual dentro do Portal, com índice de capítulos e busca ([Primeiros passos](01-primeiros-passos.md#ajuda-este-manual-no-portal)).
 - Manual de uso do Portal publicado, com um capítulo por módulo e perguntas frequentes ([Índice](README.md)).
 - **Meu dia**: o botão **Revisar uma por vez** passa pelas demandas que vencem, com **Concluir** e **Próxima** ([Visão geral e Meu dia](02-visao-geral.md#meu-dia)).
