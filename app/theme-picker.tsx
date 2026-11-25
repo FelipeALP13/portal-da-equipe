@@ -24,9 +24,11 @@ export default function ThemePicker() {
   </div>;
 }
 
-/** Acompanha a troca de claro/escuro do sistema quando a escolha é "Automático". */
+/** Reaplica o tema salvo ao montar (se a página for montada só no navegador, o script do <head> não roda)
+ *  e acompanha a troca de claro/escuro do sistema quando a escolha é "Automático". */
 export function useSystemThemeSync() {
   useEffect(() => {
+    applyTheme(readTheme());
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => { if (readTheme() === "system") applyTheme("system"); };
     media.addEventListener("change", onChange);

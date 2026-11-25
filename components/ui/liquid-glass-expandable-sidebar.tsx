@@ -559,7 +559,9 @@ function NavigationGlass({
   );
 }
 
-gsap.registerPlugin(Flip, useGSAP);
+// Só no navegador: no servidor (Cloudflare Worker) o registro liga o relógio do GSAP com setTimeout,
+// o que o Worker proíbe e derruba a página com erro 500.
+if (typeof window !== "undefined") gsap.registerPlugin(Flip, useGSAP);
 
 type GlassSidebarItem = GlassNavItem & { children?: GlassNavItem[] };
 type GlassNavGroup = { label: string; items: GlassSidebarItem[] };
