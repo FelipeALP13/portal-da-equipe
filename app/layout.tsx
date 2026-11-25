@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import "@fontsource-variable/inter/wght.css";
 import "@fontsource-variable/space-grotesk/wght.css";
 import "./globals.css";
@@ -18,9 +19,21 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const brand = await loadBrand();
   const logo = brandLogoUrl(brand);
+  // Cartão do link colado no WhatsApp/Teams/e-mail: precisa do endereço completo da imagem.
+  let site: URL | undefined;
+  try {
+    const head = await headers();
+    const host = head.get("host");
+    if (host) site = new URL(`${head.get("x-forwarded-proto") ?? (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https")}://${host}`);
+  } catch { /* sem cabeçalhos: fica sem cartão */ }
   return {
     title: brand.name,
     description: APP_DESCRIPTION,
+    ...(site ? {
+      metadataBase: site,
+      openGraph: { type: "website", locale: "pt_BR", siteName: brand.name, title: brand.name, description: APP_DESCRIPTION, url: site.origin, images: [{ url: new URL("/og.png", site).href, width: 1200, height: 630, alt: `${brand.name}: tudo da equipe em um só lugar` }] },
+      twitter: { card: "summary_large_image", title: brand.name, description: APP_DESCRIPTION, images: [new URL("/og.png", site).href] },
+    } : {}),
     // Sistema interno: fora dos buscadores (o worker também manda X-Robots-Tag e o robots.txt bloqueia tudo).
     robots: { index: false, follow: false },
     manifest: "/api/manifest",
