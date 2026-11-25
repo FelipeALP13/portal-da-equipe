@@ -6,6 +6,8 @@ Visão técnica do projeto (como rodar, publicar, migrações, segurança e sist
 
 O manual em `docs/manual/` explica o Portal para quem usa, sem termos de programação. Ele tem um capítulo por módulo (índice em `docs/manual/README.md`), perguntas frequentes e o changelog `docs/manual/novidades.md`.
 
+A tela **Ajuda** do Portal (`app/help-view.tsx`, leitura em `app/manual-markdown.ts`) mostra esses mesmos arquivos, embutidos no build: o que estiver em `docs/manual/` é o que a equipe lê na versão publicada. Ela entende só o Markdown simples do manual (títulos, parágrafos, listas com um nível dentro, tabelas, citações, blocos de código, negrito, `código` e links). O teste `tests/manual-markdown.test.ts` falha se algum link entre capítulos apontar para arquivo ou seção que não existe.
+
 **Regra: toda mudança que altera tela, fluxo ou permissão atualiza o manual no mesmo commit.**
 
 Isso inclui: tela, aba, botão ou campo novo, renomeado ou removido; mudança no passo a passo de uma ação; mudança em quem pode fazer o quê (perfil Administrador/Membro/Somente leitura, líder de time ou permissão individual); importação/exportação; avisos do sino.

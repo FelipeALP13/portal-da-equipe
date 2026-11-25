@@ -76,6 +76,7 @@ O menu fica à esquerda e abre ao passar o mouse (no celular, pelo botão de men
 - **Equipe**: Escala, Avaliações e metas, Pessoas, Painel e Manutenção.
 - **Copa**: Estoque (Itens e saldos, Pedidos da equipe, Planejamento, Relatórios e Histórico).
 - **Administração** (só administradores): Usuários e Marca e segurança.
+- **Ajuda**: este manual, dentro do Portal (veja abaixo).
 
 Números ao lado dos itens mostram o que espera por você (demandas em aberto, chamados na fila do seu time, mensagens não lidas). Em vermelho, há algo atrasado ou uma conversa direta.
 
@@ -114,6 +115,16 @@ Ações que não têm volta (excluir, cancelar, recusar) abrem uma janela pedind
 
 Na primeira entrada, um tour curto mostra onde fica cada coisa: menu, demandas, chamados, busca, chat, avisos e perfil. Para ver de novo: **Meu perfil → Ver o tour**, ou busque "tour" no **Ctrl+K**.
 
+### Ajuda (este manual no Portal)
+
+Clique em **Ajuda**, no fim do menu lateral (ou busque "ajuda" no **Ctrl+K**). A tela mostra este manual:
+
+- à esquerda, os capítulos; clique para abrir;
+- **Buscar no manual**: digite pelo menos 2 letras (ex.: "lançar horas", "senha") e clique no resultado para ir direto à seção;
+- os links dentro do texto levam ao capítulo e à seção citados.
+
+A Ajuda mostra sempre o manual da versão do Portal que está no ar.
+
 ### Página não encontrada
 
 Se você abrir um endereço que não existe, o Portal mostra **Página não encontrada** com o botão **Voltar para o Portal**.
@@ -123,6 +134,7 @@ Se você abrir um endereço que não existe, o Portal mostra **Página não enco
 | Ação | Administrador | Membro | Somente leitura |
 | --- | --- | --- | --- |
 | Entrar, mudar a própria senha, foto, tema e avisos | Sim | Sim | Sim |
+| Ler a Ajuda | Sim | Sim | Sim |
 | Ligar e desligar a própria verificação em duas etapas | Sim | Sim | Sim |
 | Usar o botão "+ Criar" | Sim | Sim | Não |
 | Redefinir a senha ou a verificação de outra pessoa | Sim | Não | Não |

@@ -1,12 +1,12 @@
 # Manual do Portal da Equipe
 
-Este manual explica como usar o Portal da Equipe no dia a dia. Ele foi escrito para quem usa o sistema, não para quem programa. Os nomes de pessoas, clientes e números usados nos exemplos são fictícios.
+Este manual explica como usar o Portal da Equipe no dia a dia. Ele foi escrito para quem usa o sistema, não para quem programa. Ele também aparece dentro do Portal, no item **Ajuda** do menu. Os nomes de pessoas, clientes e números usados nos exemplos são fictícios.
 
 > O nome, o logo e a cor que aparecem no seu Portal podem ser diferentes dos citados aqui: o administrador pode mudá-los em **Marca e segurança**. Os menus e os botões continuam os mesmos.
 
 ## Índice
 
-1. [Primeiros passos](01-primeiros-passos.md): entrar, verificação em duas etapas, meu perfil, tema escuro, menu, busca, botão "+ Criar" e avisos
+1. [Primeiros passos](01-primeiros-passos.md): entrar, verificação em duas etapas, meu perfil, tema escuro, menu, busca, botão "+ Criar", avisos e Ajuda
 2. [Visão geral e Meu dia](02-visao-geral.md): a página inicial, mural de avisos, daily, elogios e enquetes, comemorações
 3. [Minha agenda e Calendário](03-agenda-e-calendario.md): compromissos, reuniões no Teams ou no Meet, lembretes e o calendário do mês
 4. [Demandas](04-demandas.md): quadro, lista e semana, checklist, horas, cronômetro, dependências, modelos e repetição

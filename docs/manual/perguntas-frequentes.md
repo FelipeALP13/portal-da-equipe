@@ -79,5 +79,8 @@ O Portal precisa de pelo menos um ciclo completo (abrir e consumir) para calcula
 **Posso usar o Portal no celular?**
 Sim. Ele funciona no navegador do celular e pode ser instalado como aplicativo pelo menu do navegador ("Instalar" ou "Adicionar à tela inicial").
 
+**Onde encontro este manual dentro do Portal?**
+No item **Ajuda**, no fim do menu lateral, ou buscando "ajuda" no **Ctrl+K**.
+
 **Onde vejo o que mudou no Portal?**
 Em [Novidades](novidades.md).
