@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLiveRefresh } from "./live";
 import BellRing from "lucide-react/icons/bell-ring";
 import Check from "lucide-react/icons/check";
@@ -12,6 +12,7 @@ import { relativeTime } from "./task-shared";
 import { MAX_REQUEST_NOTE, MAX_REQUEST_TITLE, REQUEST_STATUS_LABEL, type RequestStatus } from "./copa-tools";
 import type { Item } from "./dashboard-shared";
 import { askConfirm } from "./confirm-dialog";
+import { useCreateRequest } from "./create-request";
 
 type CopaRequest = {
   id: number; title: string; note: string; status: RequestStatus;
@@ -53,6 +54,9 @@ export function CopaRequestsView({ items, onStockChanged }: { items: Item[]; onS
     }
   }, []);
   useLiveRefresh(load);
+  // "+ Criar" > Pedido da copa: leva o cursor direto para o campo do pedido.
+  const askInput = useRef<HTMLInputElement>(null);
+  useCreateRequest("copa", () => window.requestAnimationFrame(() => { askInput.current?.focus(); askInput.current?.scrollIntoView({ block: "center" }); }));
 
   useEffect(() => {
     const first = window.setTimeout(() => { void load(); }, 0);
@@ -106,7 +110,7 @@ export function CopaRequestsView({ items, onStockChanged }: { items: Item[]; onS
         {data?.settings && <button type="button" className="secondary-button" onClick={() => setShowSettings((value) => !value)} aria-expanded={showSettings}><BellRing size={15} /> Quem cuida das compras</button>}
       </div>
       {data?.me.canRequest !== false && <form className="copa-ask-form" onSubmit={create}>
-        <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={MAX_REQUEST_TITLE} placeholder="Ex.: adoçante, chá de camomila, pão de queijo" aria-label="O que você quer pedir" />
+        <input ref={askInput} value={title} onChange={(event) => setTitle(event.target.value)} maxLength={MAX_REQUEST_TITLE} placeholder="Ex.: adoçante, chá de camomila, pão de queijo" aria-label="O que você quer pedir" />
         <input value={note} onChange={(event) => setNote(event.target.value)} maxLength={MAX_REQUEST_NOTE} placeholder="Detalhe (opcional): marca, sabor, quantidade" aria-label="Detalhe do pedido" />
         <button className="primary-button" disabled={busy || title.trim().length < 2}>Pedir</button>
       </form>}

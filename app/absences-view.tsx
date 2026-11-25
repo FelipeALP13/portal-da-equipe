@@ -10,6 +10,7 @@ import { absenceKindLabels, absenceKinds, daysBetween, describeAbsence, splitAbs
 import { Avatar } from "./tasks-view";
 import { absencesChanged, useAbsences, type AbsenceRequest, type LoadedAbsence } from "./use-absences";
 import { askConfirm, askText } from "./confirm-dialog";
+import { useCreateRequest } from "./create-request";
 
 type Person = { id: number; name: string; active: boolean; avatarIcon: string; avatarKey: string | null };
 
@@ -31,6 +32,7 @@ export default function AbsencesView({ people }: { people: Person[] }) {
   const [notice, setNotice] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+  useCreateRequest("absence", () => setCreating(true));
   const today = todayInSaoPaulo();
   const byId = new Map(people.map((person) => [person.id, person]));
   const groups = splitAbsences(absences, today, 60);
@@ -108,7 +110,7 @@ export default function AbsencesView({ people }: { people: Person[] }) {
       {list("Próximos 60 dias", groups.upcoming, "Nenhuma ausência marcada.")}
       {groups.past.length > 0 && list("Últimos 30 dias", groups.past, "")}
     </>}
-    {creating && me && <AbsenceModal people={manageable} meId={me.id} today={today} isAdmin={me.manageable === "all"} onClose={() => setCreating(false)} onSaved={(pendingApproval) => { setCreating(false); setNotice(pendingApproval ? "Pedido enviado. Seu líder recebe um aviso para aprovar; a ausência entra na escala depois da aprovação." : "Ausência registrada."); absencesChanged(); }} />}
+    {creating && me && manageable.length > 0 && <AbsenceModal people={manageable} meId={me.id} today={today} isAdmin={me.manageable === "all"} onClose={() => setCreating(false)} onSaved={(pendingApproval) => { setCreating(false); setNotice(pendingApproval ? "Pedido enviado. Seu líder recebe um aviso para aprovar; a ausência entra na escala depois da aprovação." : "Ausência registrada."); absencesChanged(); }} />}
   </div>;
 }
 

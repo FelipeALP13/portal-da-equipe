@@ -6,7 +6,7 @@ import Ellipsis from "lucide-react/icons/ellipsis";
 
 export type MoreAction = { key: string; label: string; icon?: React.ReactNode; onClick: () => void; disabled?: boolean; title?: string };
 
-export function MoreMenu({ actions, label = "Mais" }: { actions: MoreAction[]; label?: string }) {
+export function MoreMenu({ actions, label = "Mais", icon = <Ellipsis size={15} />, className = "secondary-button", title }: { actions: MoreAction[]; label?: string; icon?: React.ReactNode; className?: string; title?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -20,7 +20,7 @@ export function MoreMenu({ actions, label = "Mais" }: { actions: MoreAction[]; l
   }, [open]);
   if (!actions.length) return null;
   return <div className="more-menu" ref={ref}>
-    <button type="button" className="secondary-button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((value) => !value)}><Ellipsis size={15} /> {label}</button>
+    <button type="button" className={className} title={title} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((value) => !value)}>{icon} <span className="more-menu-label">{label}</span></button>
     {open && <div className="more-menu-pop" role="menu">
       {actions.map((action) => <button key={action.key} type="button" role="menuitem" disabled={action.disabled} title={action.title} onClick={() => { setOpen(false); action.onClick(); }}>{action.icon}{action.label}</button>)}
     </div>}

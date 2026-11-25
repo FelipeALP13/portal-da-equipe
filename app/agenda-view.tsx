@@ -22,6 +22,7 @@ import { Avatar } from "./tasks-view";
 import { AvatarStack } from "./task-shared";
 import { agendaChanged, expandAgenda, useNow, type AgendaEvent } from "./use-agenda";
 import { askConfirm } from "./confirm-dialog";
+import { useCreateRequest } from "./create-request";
 
 type Person = { id: number; name: string; avatarIcon: string; avatarKey: string | null; email: string | null };
 type Data = { events: AgendaEvent[]; members: Person[]; me: { id: number; hasCalendarLink?: boolean } };
@@ -66,6 +67,7 @@ export default function AgendaView({ openRequest, onOpenRequestHandled }: { open
     }
   }, []);
   useLiveRefresh(load);
+  useCreateRequest("agenda", () => setEditing("new"));
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   // Veio do sino: destaca o compromisso.
