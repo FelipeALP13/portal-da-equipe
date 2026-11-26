@@ -15,6 +15,7 @@ Como registrar (para quem altera o Portal):
 
 ## 2026-11-26
 
+- **Chat**: as imagens da busca de GIFs (Giphy) voltaram a aparecer, e os GIFs enviados também ([Chat](09-chat.md)).
 - **Copa**: cada time tem o próprio estoque. Você vê e mexe só no estoque do seu time, e os administradores escolhem o time em **Estoque do time**. Os itens que já existiam ficaram com o Suporte ([Copa](15-copa.md#um-estoque-por-time)).
 - **Entrar no Portal**: espaços sobrando no começo ou no fim da senha (ao colar ou no preenchimento automático) não impedem mais a entrada ([Primeiros passos](01-primeiros-passos.md#entrar-no-portal)).
 - **Demandas**: ao pausar uma demanda, o prazo é apagado e ela não conta mais como vencida. As que já estavam pausadas também ficaram sem prazo ([Demandas](04-demandas.md#status-de-uma-demanda)).
