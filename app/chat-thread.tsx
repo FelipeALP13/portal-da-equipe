@@ -40,6 +40,9 @@ import { taskPriorities, taskPriorityLabels } from "./tasks";
 import { EMOJI_GROUPS, groupMessages, localInputToIso, MAX_ATTACHMENTS, MAX_MESSAGE, parseMarkdown, REACTIONS, reminderPresets, splitLinks, STATUS_DURATIONS, STATUS_KINDS, STATUS_LABELS, taskTitleFromMessage, typingText, type Inline, type PersonStatus, type StatusKind } from "./social-tools";
 import { Avatar, MentionTextarea } from "./task-shared";
 import { askConfirm } from "./confirm-dialog";
+import ImageIcon from "lucide-react/icons/image";
+import { wallpaperStyle } from "./chat-wallpaper";
+import { ChatWallpaperPicker, useChatWallpaper } from "./chat-wallpaper-picker";
 
 export type Status = PersonStatus & { untilLabel: string | null };
 export type Person = { id: number; name: string; jobTitle?: string; avatarIcon: string; avatarKey: string | null; teamColor?: string | null; teamName?: string | null; online?: boolean; status?: Status | null };
@@ -465,6 +468,8 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
   // Mensagens que acabaram de sair do campo e ainda estão a caminho do servidor (aparecem na hora, "enviando").
   const [outbox, setOutbox] = useState<{ key: number; body: string; images: number }[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
+  const [wallpaper, setWallpaper] = useChatWallpaper();
+  const [pickingWallpaper, setPickingWallpaper] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const stickToBottom = useRef(true);
   const keepOffset = useRef<number | null>(null);
@@ -639,7 +644,7 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
   const unseen = awayFrom === null ? 0 : messages.filter((message) => message.id > awayFrom && message.memberId !== me.id && !message.deleted).length;
   const toBottom = () => { const box = listRef.current; stickToBottom.current = true; setAwayFrom(null); if (box) box.scrollTop = box.scrollHeight; };
 
-  return <div className={`cv-thread ${compact ? "compact" : ""}`}>
+  return <div className={`cv-thread ${compact ? "compact" : ""}`} data-wallpaper-photo={wallpaper.kind === "photo" ? "" : undefined}>
     <header className="cv-thread-head">
       {onBack && <button className="cv-icon-button cv-back" onClick={onBack} aria-label="Voltar"><ArrowLeft size={18} /></button>}
       {channel && (isDm ? <PersonAvatar id={channel.peerId} name={channel.name} people={people} size={34} status /> : <span className="cv-head-icon"><ChannelMark size={18} /></span>)}
@@ -648,8 +653,10 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
         {channel && <small>{isDm ? (peer?.status ? statusText(peer.status) : peer?.online ? "Online agora" : peer?.jobTitle || "Conversa particular") : channel.description || "Canal aberto a toda a equipe"}</small>}
       </div>
       {channel && actions?.(channel)}
+      <button className="cv-icon-button" onClick={() => setPickingWallpaper(true)} aria-label="Fundo das conversas" title="Fundo das conversas"><ImageIcon size={16} /></button>
       {onOpenFull && <button className="cv-icon-button" onClick={onOpenFull} aria-label="Abrir em tela cheia" title="Abrir em tela cheia"><Maximize2 size={16} /></button>}
     </header>
+    {pickingWallpaper && <ChatWallpaperPicker wallpaper={wallpaper} onChange={setWallpaper} onClose={() => setPickingWallpaper(false)} upload={(file) => uploadImage(file, "chat")} />}
     {pinned.length > 0 && <div className="cv-pinbar">
       <button className="cv-pinbar-main" onClick={() => void jumpTo(pinned[0].id)} title="Ir até a mensagem fixada"><Pin size={14} /><span><b>{pinned[0].authorName.split(/\s+/)[0]}:</b> {pinned[0].text || "Imagem"}</span></button>
       {pinned.length > 1 && <button className="cv-pinbar-more" onClick={() => setShowPins((value) => !value)} aria-expanded={showPins}>{pinned.length} fixadas</button>}
@@ -659,7 +666,7 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
       </div>}
     </div>}
 
-    <div className="cv-posts" ref={listRef}>
+    <div className="cv-posts" ref={listRef} data-wallpaper={wallpaper.kind === "photo" ? "foto" : wallpaper.id} style={wallpaperStyle(wallpaper)}>
       {hasMore && <button className="cv-older" onClick={() => void loadOlder()}>Carregar mensagens anteriores</button>}
       {loaded && !messages.length && <div className="cv-start">
         {isDm ? <PersonAvatar id={channel?.peerId ?? null} name={channel?.name ?? ""} people={people} size={56} /> : <span className="cv-head-icon big"><ChannelMark size={28} /></span>}
