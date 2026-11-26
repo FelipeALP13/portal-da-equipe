@@ -1,6 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
 import { getDb } from "../../../db";
-import { members, teamMembers, teams } from "../../../db/schema";
+import { items, members, teamMembers, teams } from "../../../db/schema";
 import { getSessionMember } from "../../auth-session";
 import { writeAudit } from "../../audit";
 import { hasTrustedOrigin } from "../../request-security";
@@ -113,6 +113,9 @@ export async function POST(request: Request) {
 
     if (action === "deleteTeam") {
       const teamId = Number(body.teamId);
+      // O estoque da Copa é por time: com itens, apagar o time deixaria o estoque sem dono.
+      const [stockItem] = await db.select({ id: items.id }).from(items).where(eq(items.teamId, teamId)).limit(1);
+      if (stockItem) return json({ error: "Este time tem itens no estoque da Copa. Exclua os itens do estoque dele antes de excluir o time." }, 409);
       const [deleted] = await db.delete(teams).where(eq(teams.id, teamId)).returning();
       if (!deleted) return json({ error: "Time não encontrado." }, 404);
       await audit("team_deleted", deleted.id, deleted.name);

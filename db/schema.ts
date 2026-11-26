@@ -11,11 +11,13 @@ export const items = sqliteTable("items", {
   minimumQty: real("minimum_qty").notNull().default(1),
   icon: text("icon").notNull().default("📦"),
   imageKey: text("image_key"),
-  scanCode: text("scan_code").unique(),
+  scanCode: text("scan_code"),
+  /** Time dono do item: cada time tem o próprio estoque da Copa. */
+  teamId: integer("team_id").references((): AnySQLiteColumn => teams.id, { onDelete: "set null" }),
   lastOpenedAt: text("last_opened_at"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => [uniqueIndex("items_team_scan_code_unique").on(table.teamId, table.scanCode), index("items_team_idx").on(table.teamId)]);
 
 export const movements = sqliteTable("movements", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -1041,6 +1043,8 @@ export const copaRequests = sqliteTable("copa_requests", {
   status: text("status", { enum: ["open", "approved", "declined"] }).notNull().default("open"),
   // Item do estoque ligado ao pedido aprovado (novo ou já existente).
   itemId: integer("item_id").references(() => items.id, { onDelete: "set null" }),
+  /** Time do pedido (o estoque onde ele entra, se aprovado). */
+  teamId: integer("team_id").references(() => teams.id, { onDelete: "set null" }),
   createdById: integer("created_by_id").references(() => members.id, { onDelete: "set null" }),
   createdByName: text("created_by_name").notNull().default("Equipe"),
   decidedByName: text("decided_by_name"),

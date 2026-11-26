@@ -1,9 +1,10 @@
-import { asc, desc, eq, gte } from "drizzle-orm";
+import { and, asc, desc, eq, gte } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { items, movements } from "../../../db/schema";
 import { getSessionMember } from "../../auth-session";
 import { hasPermission } from "../../member-permissions";
 import { buildReport, lastMonthKeys, normalizePeriod } from "../../reports";
+import { resolveStockTeam } from "../../stock-teams";
 
 export async function GET(request: Request) {
   try {
@@ -13,19 +14,22 @@ export async function GET(request: Request) {
     if (!member.active) return Response.json({ error: "Seu acesso ao sistema está desativado." }, { status: 403 });
     if (!hasPermission(member, "viewHistory")) return Response.json({ error: "Você não tem permissão para ver os relatórios." }, { status: 403 });
 
-    const months = lastMonthKeys(new Date(), normalizePeriod(new URL(request.url).searchParams.get("months")));
+    const params = new URL(request.url).searchParams;
+    const months = lastMonthKeys(new Date(), normalizePeriod(params.get("months")));
+    // Relatório do estoque do time escolhido (só dos times da pessoa).
+    const teamFilter = eq(items.teamId, (await resolveStockTeam(db, member, params.get("team"))).stockTeamId ?? -1);
     // Um dia de folga cobre a diferença entre UTC e o horário de Brasília;
     // o recorte exato por mês acontece em buildReport.
     const [firstYear, firstMonth] = months[0].split("-").map(Number);
     const since = new Date(Date.UTC(firstYear, firstMonth - 1, 1) - 86400000).toISOString().slice(0, 10);
 
     const [itemRows, movementRows] = await Promise.all([
-      db.select({ id: items.id, name: items.name, unit: items.unit, icon: items.icon, imageKey: items.imageKey }).from(items).orderBy(asc(items.name)),
+      db.select({ id: items.id, name: items.name, unit: items.unit, icon: items.icon, imageKey: items.imageKey }).from(items).where(teamFilter).orderBy(asc(items.name)),
       db
         .select({ itemId: movements.itemId, type: movements.type, quantity: movements.quantity, createdAt: movements.createdAt, createdByName: movements.createdByName })
         .from(movements)
         .innerJoin(items, eq(movements.itemId, items.id))
-        .where(gte(movements.createdAt, since))
+        .where(and(gte(movements.createdAt, since), teamFilter))
         .orderBy(desc(movements.createdAt))
         .limit(20000),
     ]);

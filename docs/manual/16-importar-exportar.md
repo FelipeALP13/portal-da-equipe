@@ -50,7 +50,7 @@ A importação **nunca apaga** registros. Como o Portal reconhece um registro qu
 - **Pessoas**: o e-mail. Pessoas novas entram **sem senha**: o acesso é criado depois, em **Usuários**;
 - **Ausências**: mesma pessoa, tipo e início;
 - **Equipamentos e licenças**: tipo e patrimônio (ou o nome, sem patrimônio);
-- **Itens do estoque**: o nome. Os saldos não mudam pela planilha: use compra ou ajuste.
+- **Itens do estoque**: o **Time** e o nome (cada time tem o próprio estoque). Com a coluna **Time** em branco, o item vai para o seu time, se você for de um só. Você só exporta e importa o estoque dos seus times (administradores, de todos). Os saldos não mudam pela planilha: use compra ou ajuste.
 
 ## Importar as planilhas antigas de demandas
 

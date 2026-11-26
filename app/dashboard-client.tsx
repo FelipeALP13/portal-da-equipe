@@ -86,12 +86,19 @@ import { Modal } from "./dashboard-modal";
 import { BrandStroke } from "./brand-stroke";
 import { askConfirm } from "./confirm-dialog";
 
+/** Último estoque escolhido neste navegador (administradores e quem está em mais de um time). */
+const STOCK_TEAM_KEY = "portal.stockTeam";
+
 export default function Home() {
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  // Estoque da Copa por time: a pessoa vê o do seu time; administradores (ou quem está em mais de um) escolhem.
+  const [stockTeams, setStockTeams] = useState<{ id: number; name: string }[] | null>(null);
+  const [stockTeamId, setStockTeamId] = useState<number | null>(null);
+  const stockTeamChoice = useRef<string | null>(null);
   const [schedule, setSchedule] = useState<Schedule>({ teams: [], weeks: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -243,11 +250,14 @@ export default function Home() {
   const load = useCallback(async (silent = false) => {
     try {
       if (!silent) setError("");
-      const response = await fetch("/api/inventory", { cache: "no-store" });
-      const data = await response.json() as { error?: string; items: Item[]; movements: Movement[]; currentUser: CurrentUser; members?: Member[]; schedule?: Schedule };
+      if (stockTeamChoice.current === null) { try { stockTeamChoice.current = window.localStorage.getItem(STOCK_TEAM_KEY) ?? ""; } catch { stockTeamChoice.current = ""; } }
+      const response = await fetch(`/api/inventory${stockTeamChoice.current ? `?team=${encodeURIComponent(stockTeamChoice.current)}` : ""}`, { cache: "no-store" });
+      const data = await response.json() as { error?: string; items: Item[]; movements: Movement[]; currentUser: CurrentUser; members?: Member[]; schedule?: Schedule; stockTeams?: { id: number; name: string }[]; stockTeamId?: number | null };
       if (response.status === 401) { router.replace("/"); return; }
       if (!response.ok) throw new Error(data.error || "Não foi possível carregar o estoque.");
       setItems(data.items);
+      setStockTeams(data.stockTeams ?? []);
+      setStockTeamId(data.stockTeamId ?? null);
       setMovements(data.movements);
       setCurrentUser(data.currentUser);
       setMembers(data.members || []);
@@ -295,6 +305,13 @@ export default function Home() {
   const measuredItems = items.filter((item) => item.analytics.averageDurationDays !== null);
   const permissions = currentUser?.permissions ?? permissionPresets.viewer;
   const isAdmin = currentUser?.role === "admin";
+  const stockTab = ["stock", "requests", "planning", "reports", "history"].includes(tab);
+  function chooseStockTeam(teamId: number) {
+    stockTeamChoice.current = String(teamId);
+    try { window.localStorage.setItem(STOCK_TEAM_KEY, String(teamId)); } catch { /* sem armazenamento: vale até fechar */ }
+    setStockTeamId(teamId);
+    void load();
+  }
   const todayLabel = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long" }).format(new Date());
   const playfulNote = playfulGreeting(currentUser?.name || "Equipe", lowItems[0]?.name, openItems.length);
   const filtered = useMemo(() => {
@@ -313,7 +330,7 @@ export default function Home() {
       const response = await fetch("/api/inventory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ stockTeamId, ...payload }),
       });
       const data = await response.json() as { error?: string };
       if (!response.ok) throw new Error(data.error || "Não foi possível salvar.");
@@ -450,6 +467,11 @@ export default function Home() {
         <section key={dataVersion} className={`content ${tab === "community" ? "content-full" : ""}`}>
           {error && <div className="alert error"><TriangleAlert size={18} /><span>{error}</span><button onClick={() => setError("")} aria-label="Fechar aviso"><X size={16} /></button></div>}
           {notice && <div className="toast"><PackageCheck size={18} />{notice}</div>}
+          {stockTab && stockTeams && (stockTeams.length ? <div className="stock-team-bar">
+            {stockTeams.length > 1
+              ? <label><span>Estoque do time</span><select value={stockTeamId ?? ""} onChange={(event) => chooseStockTeam(Number(event.target.value))}>{stockTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}</select></label>
+              : <span>Estoque do time <strong>{stockTeams[0].name}</strong></span>}
+          </div> : <div className="alert info"><TriangleAlert size={18} /><span>Cada time tem o próprio estoque da Copa, e você ainda não faz parte de nenhum time. Peça a um administrador para incluir você no seu time em <strong>Pessoas</strong>.</span></div>)}
 
           {tab === "hub" ? <HubView onOpenReviews={() => go("reviews")} onOpenPulse={() => openView("pulse")} items={items} movements={movements} schedule={schedule} currentUser={currentUser} counts={navCounts} agenda={upcomingAgenda} onOpenAgenda={openAgenda} onMyDay={() => setMyDayOpen(true)} onOpen={(destination) => go(destination)} onOpenTask={openTask} onOpenTicket={openTicket} onNewTask={() => { openTask(); setNewTaskRequest((value) => value + 1); }} onNewTicket={() => { openTicket(); setNewTicketRequest((value) => value + 1); }} onSearch={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))} /> : tab === "stock" ? (
             <>
@@ -521,7 +543,7 @@ export default function Home() {
                 </div>
               )}
             </>
-          ) : tab === "schedule" ? <ScheduleView schedule={schedule} loading={loading} canEdit={permissions.manageSchedule} onNewTeam={() => setModal({ kind: "supportTeam" })} onEditTeam={(team) => setModal({ kind: "supportTeam", team })} onNewWeek={() => setModal({ kind: "supportWeek" })} onEditWeek={(week) => setModal({ kind: "supportWeek", week })} onGenerate={() => setModal({ kind: "generateWeeks" })} onScheduleChanged={() => void load(true)} /> :tab === "planning" ? <PlanningView items={items} loading={loading} shopping={shopping} upcoming={upcomingStock} coverDays={coverDays} onCoverDays={setCoverDays} today={stockToday} onTrip={permissions.registerPurchases ? () => setTrip(true) : undefined} /> : tab === "requests" ? <CopaRequestsView items={items} onStockChanged={() => void load(true)} /> : tab === "maintenance" ? <MaintenanceView /> : tab === "reports" ? <ReportsView /> : tab === "tasks" ? <TasksView openRequest={taskToOpen} onOpenRequestHandled={clearTaskToOpen} createRequest={newTaskRequest} onCreateRequestHandled={clearNewTaskRequest} /> : tab === "people" ? <PeopleView key={`${personSearch}-${subTab.key}`} initialSearch={personSearch} initialTab={subTab.people} /> : tab === "projects" ? <ProjectsView onOpenTask={openTask} openRequest={projectToOpen} onOpenRequestHandled={clearProjectToOpen} /> : tab === "panel" ? <LeadershipView onOpenTask={openTask} onOpenProjects={() => setTab("projects")} /> : tab === "tickets" ? <TicketsView openRequest={ticketToOpen} onOpenRequestHandled={clearTicketToOpen} createRequest={newTicketRequest} onCreateRequestHandled={clearNewTicketRequest} onOpenTask={openTask} onOpenArticle={(articleId) => openKnowledge({ articleId })} onSaveSolution={(draft) => openKnowledge({ draft })} /> : tab === "clients" ? <ClientsArea key={subTab.key} initialTab={subTab.clients} onOpenTask={openTask} onOpenTicket={openTicket} /> : tab === "sprints" ? <SprintsView onOpenTask={openTask} /> : tab === "reviews" ? <ReviewsView key={reviewsTab.key} initialTab={reviewsTab.tab} /> : tab === "community" ? <CommunityView key={communityTab.key} openChannel={communityTab.channel} /> : tab === "agenda" ? <AgendaView openRequest={eventToOpen} onOpenRequestHandled={clearEventToOpen} /> : tab === "calendar" ? <CalendarView schedule={schedule} onOpenTask={openTask} onOpenEvent={openAgenda} onOpenProject={(id) => { setTab("projects"); setProjectToOpen(id); }} /> : tab === "admin" && isAdmin ? <AdminView /> : tab === "knowledge" ? <KnowledgeView openRequest={articleToOpen} draft={articleDraft} onRequestHandled={clearArticleRequest} onOpenTicket={openTicket} /> :tab === "team" ? <TeamView members={members} currentUser={currentUser} saving={saving} onAddMember={() => setModal({ kind: "member" })} onEditMember={(member) => setModal({ kind: "member", member })} onDeleteMember={deleteMember} onUpdateRole={(userId, role) => submit({ action: "updateMemberRole", userId, role }, "Permissão atualizada.")} onUpdateActive={(userId, active) => submit({ action: "updateMemberActive", userId, active }, active ? "Acesso reativado." : "Acesso desativado.")} /> : tab === "help" ? <HelpView /> : <HistoryView movements={movements} loading={loading} />}
+          ) : tab === "schedule" ? <ScheduleView schedule={schedule} loading={loading} canEdit={permissions.manageSchedule} onNewTeam={() => setModal({ kind: "supportTeam" })} onEditTeam={(team) => setModal({ kind: "supportTeam", team })} onNewWeek={() => setModal({ kind: "supportWeek" })} onEditWeek={(week) => setModal({ kind: "supportWeek", week })} onGenerate={() => setModal({ kind: "generateWeeks" })} onScheduleChanged={() => void load(true)} /> :tab === "planning" ? <PlanningView items={items} loading={loading} shopping={shopping} upcoming={upcomingStock} coverDays={coverDays} onCoverDays={setCoverDays} today={stockToday} onTrip={permissions.registerPurchases ? () => setTrip(true) : undefined} /> : tab === "requests" ? <CopaRequestsView stockTeamId={stockTeamId} items={items} onStockChanged={() => void load(true)} /> : tab === "maintenance" ? <MaintenanceView /> : tab === "reports" ? <ReportsView stockTeamId={stockTeamId} /> : tab === "tasks" ? <TasksView openRequest={taskToOpen} onOpenRequestHandled={clearTaskToOpen} createRequest={newTaskRequest} onCreateRequestHandled={clearNewTaskRequest} /> : tab === "people" ? <PeopleView key={`${personSearch}-${subTab.key}`} initialSearch={personSearch} initialTab={subTab.people} /> : tab === "projects" ? <ProjectsView onOpenTask={openTask} openRequest={projectToOpen} onOpenRequestHandled={clearProjectToOpen} /> : tab === "panel" ? <LeadershipView onOpenTask={openTask} onOpenProjects={() => setTab("projects")} /> : tab === "tickets" ? <TicketsView openRequest={ticketToOpen} onOpenRequestHandled={clearTicketToOpen} createRequest={newTicketRequest} onCreateRequestHandled={clearNewTicketRequest} onOpenTask={openTask} onOpenArticle={(articleId) => openKnowledge({ articleId })} onSaveSolution={(draft) => openKnowledge({ draft })} /> : tab === "clients" ? <ClientsArea key={subTab.key} initialTab={subTab.clients} onOpenTask={openTask} onOpenTicket={openTicket} /> : tab === "sprints" ? <SprintsView onOpenTask={openTask} /> : tab === "reviews" ? <ReviewsView key={reviewsTab.key} initialTab={reviewsTab.tab} /> : tab === "community" ? <CommunityView key={communityTab.key} openChannel={communityTab.channel} /> : tab === "agenda" ? <AgendaView openRequest={eventToOpen} onOpenRequestHandled={clearEventToOpen} /> : tab === "calendar" ? <CalendarView schedule={schedule} onOpenTask={openTask} onOpenEvent={openAgenda} onOpenProject={(id) => { setTab("projects"); setProjectToOpen(id); }} /> : tab === "admin" && isAdmin ? <AdminView /> : tab === "knowledge" ? <KnowledgeView openRequest={articleToOpen} draft={articleDraft} onRequestHandled={clearArticleRequest} onOpenTicket={openTicket} /> :tab === "team" ? <TeamView members={members} currentUser={currentUser} saving={saving} onAddMember={() => setModal({ kind: "member" })} onEditMember={(member) => setModal({ kind: "member", member })} onDeleteMember={deleteMember} onUpdateRole={(userId, role) => submit({ action: "updateMemberRole", userId, role }, "Permissão atualizada.")} onUpdateActive={(userId, active) => submit({ action: "updateMemberActive", userId, active }, active ? "Acesso reativado." : "Acesso desativado.")} /> : tab === "help" ? <HelpView /> : <HistoryView movements={movements} loading={loading} />}
         </section>
       </main>
       {chatPanel && tab !== "community" && <ChatPanel onClose={() => setChatPanel(false)} onOpenFull={(channel) => { setChatPanel(false); go("community"); setCommunityTab((current) => ({ key: current.key + 1, channel })); }} />}

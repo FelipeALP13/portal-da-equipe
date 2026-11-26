@@ -1,9 +1,10 @@
 // Importar e exportar registros por planilha, com as permissões de cada conjunto.
 // A importação sempre passa por uma prévia, nunca apaga nada e célula vazia não sobrescreve o que já existe.
-import { eq, min } from "drizzle-orm";
+import { eq, inArray, min, sql } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { absences, assets, clients, incidents, items, kbArticles, maintenanceRequests, members, movements, projects, supportTeams, supportWeeks, taskEvents, taskPeople, tasks, teams, ticketEvents, tickets, timeEntries } from "../../../db/schema";
 import { getSessionMember, type SessionMember } from "../../auth-session";
+import { loadStockTeams } from "../../stock-teams";
 import { hasTrustedOrigin } from "../../request-security";
 import { readJsonBody } from "../../api-input";
 import { writeAudit } from "../../audit";
@@ -68,7 +69,9 @@ async function lookups(db: Db) {
 type Lookups = Awaited<ReturnType<typeof lookups>>;
 
 /** Linhas de cada conjunto para a planilha, com as mesmas colunas do modelo de importação. */
-async function exportRows(db: Db, key: DataSetKey, look: Lookups): Promise<Record<string, CellValue>[]> {
+async function exportRows(db: Db, key: DataSetKey, look: Lookups, stockTeamIds: number[]): Promise<Record<string, CellValue>[]> {
+  // Estoque da Copa: só os times da pessoa (administradores, todos).
+  const myStock = stockTeamIds.length ? inArray(items.teamId, stockTeamIds) : sql`0`;
   const label = (options: Record<string, string>, value: string) => options[value] ?? value;
   if (key === "tasks") return (await db.select().from(tasks)).map((row) => ({ code: taskCode(row.id), title: row.title, status: label(DATA_SETS.tasks.fields[2].options as Record<string, string>, row.status), priority: label(DATA_SETS.tasks.fields[3].options as Record<string, string>, String(row.priority)), team: look.team(row.teamId), client: look.client(row.clientId), project: look.project(row.projectId), assignee: look.person(row.assigneeId), category: row.category, openedOn: localDay(row.openedOn ?? row.createdAt), startDate: row.startDate, dueDate: row.dueDate, estimatedHours: row.estimatedHours, description: row.description }));
   if (key === "hours") {
@@ -89,9 +92,10 @@ async function exportRows(db: Db, key: DataSetKey, look: Lookups): Promise<Recor
   if (key === "absences") return (await db.select().from(absences)).map((row) => ({ person: look.person(row.memberId), kind: absenceKindLabels[row.kind], startDate: row.startDate, endDate: row.endDate, note: row.note, statusLabel: ABSENCE_STATUS[row.status] ?? row.status }));
   if (key === "assets") return (await db.select().from(assets)).map((row) => ({ kind: label(DATA_SETS.assets.fields[0].options as Record<string, string>, row.kind), name: row.name, category: row.category, identifier: row.identifier, status: label(DATA_SETS.assets.fields[4].options as Record<string, string>, row.status), seats: row.seats, purchaseDate: row.purchaseDate, expiresOn: row.expiresOn, cost: row.cost, notes: row.notes }));
   if (key === "maintenance") return (await db.select().from(maintenanceRequests)).map((row) => ({ code: row.id, title: row.title, location: row.location, priority: maintenancePriorityLabels[row.priority], status: maintenanceStatusLabels[row.status], requester: row.createdByName, assignee: look.person(row.assigneeId), createdOn: localDay(row.createdAt), resolvedOn: localDay(row.resolvedAt) }));
-  if (key === "items") return (await db.select().from(items)).map((row) => ({ name: row.name, category: row.category, unit: row.unit, minimumQty: row.minimumQty, scanCode: row.scanCode, unopenedQty: row.unopenedQty, openedQty: row.openedQty }));
-  const itemRows = await db.select({ id: items.id, name: items.name }).from(items);
-  return (await db.select().from(movements)).map((row) => ({ day: localDay(row.createdAt), item: itemRows.find((item) => item.id === row.itemId)?.name ?? "", type: MOVEMENT_LABELS[row.type] ?? row.type, quantity: row.quantity, person: row.createdByName ?? "", note: row.note }));
+  if (key === "items") return (await db.select().from(items).where(myStock)).map((row) => ({ name: row.name, team: look.team(row.teamId), category: row.category, unit: row.unit, minimumQty: row.minimumQty, scanCode: row.scanCode, unopenedQty: row.unopenedQty, openedQty: row.openedQty }));
+  const itemRows = await db.select({ id: items.id, name: items.name, teamId: items.teamId }).from(items).where(myStock);
+  const itemById = new Map(itemRows.map((item) => [item.id, item]));
+  return (await db.select().from(movements).where(itemRows.length ? inArray(movements.itemId, itemRows.map((item) => item.id)) : sql`0`)).map((row) => ({ day: localDay(row.createdAt), team: look.team(itemById.get(row.itemId)?.teamId ?? null), item: itemById.get(row.itemId)?.name ?? "", type: MOVEMENT_LABELS[row.type] ?? row.type, quantity: row.quantity, person: row.createdByName ?? "", note: row.note }));
 }
 
 /** CSV seguro no Excel; números e textos como vieram. */
@@ -127,7 +131,7 @@ export async function GET(request: Request) {
     if (format !== "xlsx" && format !== "csv") return json({ error: "Formato inválido." }, 400);
     if (!canExport(member, key)) return json({ error: "Seu perfil não pode exportar estes dados." }, 403);
     const look = await lookups(db);
-    const table = tableOf(key, await exportRows(db, key, look));
+    const table = tableOf(key, await exportRows(db, key, look, (await loadStockTeams(db, member)).map((team) => team.id)));
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
     await writeAudit(db, { actorUserId: member.userId, actorName: member.name, action: "data_exported", targetType: key, details: `${set.label}: ${table.rows.length} linhas (${format})` }).catch((error) => console.error("audit log failed", error));
     if (format === "csv") return new Response(toCsv(table), { headers: { "Cache-Control": "no-store", "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${set.file}-${today}.csv"` } });
@@ -148,6 +152,8 @@ async function planRows(db: Db, key: DataSetKey, rows: SheetRow[], allowUpdate: 
   const errors: { line: number; message: string }[] = [];
   const seen = new Set<string>();
   const now = new Date().toISOString();
+  // Estoque da Copa: cada time tem o seu; a pessoa só importa itens dos próprios times.
+  const myStockTeamIds = key === "items" ? (await loadStockTeams(db, me)).map((team) => team.id) : [];
   const ref = (map: Map<string, number | "ambiguous">, value: unknown, what: string, problems: string[]) => {
     if (!value) return null;
     const id = map.get(foldText(String(value)));
@@ -171,7 +177,7 @@ async function planRows(db: Db, key: DataSetKey, rows: SheetRow[], allowUpdate: 
   if (key === "projects") for (const row of look.projectRows) add([row.name], row.id);
   if (key === "people") for (const row of look.people) add([row.email], row.id);
   if (key === "knowledge") for (const row of await db.select({ id: kbArticles.id, title: kbArticles.title }).from(kbArticles)) add([row.title], row.id);
-  if (key === "items") for (const row of await db.select({ id: items.id, name: items.name, scanCode: items.scanCode }).from(items)) { add([row.name], row.id); if (row.scanCode) scanOwners.set(row.scanCode, row.id); }
+  if (key === "items") for (const row of await db.select({ id: items.id, name: items.name, scanCode: items.scanCode, teamId: items.teamId }).from(items)) { add([row.teamId, row.name], row.id); if (row.scanCode) scanOwners.set(`${row.teamId}|${row.scanCode}`, row.id); }
   if (key === "assets") for (const row of await db.select({ id: assets.id, kind: assets.kind, name: assets.name, identifier: assets.identifier }).from(assets)) add([row.kind, row.identifier || row.name], row.id);
   if (key === "absences") for (const row of await db.select({ id: absences.id, memberId: absences.memberId, kind: absences.kind, startDate: absences.startDate }).from(absences)) add([row.memberId, row.kind, row.startDate], row.id);
   if (key === "tickets") for (const row of await db.select({ id: tickets.id, title: tickets.title, client: tickets.client }).from(tickets)) add([row.title, row.client], row.id);
@@ -205,11 +211,14 @@ async function planRows(db: Db, key: DataSetKey, rows: SheetRow[], allowUpdate: 
       update = { clientId: ref(look.clientId, cell.client, "Cliente", problems), teamId: ref(look.teamId, cell.team, "Time", problems), tags: cell.tags, body: cell.body, updatedByName: me.name, updatedAt: now };
       insert = { title: cell.title, createdById: me.id, createdByName: me.name, ...filled(update) };
     } else if (key === "items") {
-      keyParts = [cell.name];
+      const teamId = cell.team ? ref(look.teamId, cell.team, "Time", problems) : myStockTeamIds.length === 1 ? myStockTeamIds[0] : null;
+      if (!cell.team && myStockTeamIds.length !== 1) problems.push("Informe o Time do item");
+      else if (teamId !== null && !myStockTeamIds.includes(teamId)) problems.push(`Você não mexe no estoque do time "${cell.team}"`);
+      keyParts = [teamId, cell.name];
       update = { category: cell.category, unit: cell.unit, minimumQty: cell.minimumQty, scanCode: cell.scanCode, updatedAt: now };
-      insert = { name: cell.name, ...filled(update) };
-      const owner = cell.scanCode ? scanOwners.get(String(cell.scanCode)) : undefined;
-      if (owner && owner !== existing.get(foldText(text(cell.name)))) problems.push("Código de barras já usado em outro item");
+      insert = { name: cell.name, teamId, ...filled(update) };
+      const owner = cell.scanCode ? scanOwners.get(`${teamId}|${cell.scanCode}`) : undefined;
+      if (owner && owner !== existing.get(keyParts.map((part) => foldText(text(part))).join("|"))) problems.push("Código de barras já usado em outro item deste time");
     } else if (key === "assets") {
       keyParts = [cell.kind, cell.identifier || cell.name];
       if (cell.seats !== null && (!Number.isInteger(cell.seats) || Number(cell.seats) < 1)) problems.push("Licenças: use um número inteiro a partir de 1");

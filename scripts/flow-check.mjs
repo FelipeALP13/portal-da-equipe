@@ -112,10 +112,11 @@ try {
   const removedArticle = await api("POST", "/api/knowledge", { action: "deleteArticle", articleId });
   check("artigo: excluir", removedArticle.status === 200, `status ${removedArticle.status}`);
 
-  // Item da copa
-  const item = await api("POST", "/api/inventory", { action: "addItem", name: `${TITLE} item`, category: "Outros", unit: "unidade", minimumQty: 2, icon: "", scanCode: "" });
+  // Item da copa (cada time tem o próprio estoque: cadastra no estoque que a tela abre)
+  const stockTeamId = (await api("GET", "/api/inventory")).data.stockTeamId;
+  const item = await api("POST", "/api/inventory", { action: "addItem", stockTeamId, name: `${TITLE} item`, category: "Outros", unit: "unidade", minimumQty: 2, icon: "", scanCode: "" });
   check("copa: cadastrar item", item.status === 200 || item.status === 201, `status ${item.status} ${item.data.error ?? ""}`);
-  const inventory = await api("GET", "/api/inventory");
+  const inventory = await api("GET", `/api/inventory?team=${stockTeamId}`);
   const itemRow = inventory.data.items?.find((entry) => entry.name === `${TITLE} item`);
   check("copa: item aparece com saldo 0", itemRow && Number(itemRow.unopenedQty ?? 0) + Number(itemRow.openedQty ?? 0) === 0);
   const removedItem = await api("POST", "/api/inventory", { action: "deleteItem", itemId: itemRow?.id });

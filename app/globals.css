@@ -3689,6 +3689,11 @@ html[data-theme="dark"] .community {
 .alert.success { border: 1px solid color-mix(in srgb, var(--success-solid) 35%, transparent); color: var(--success-text); background: var(--success-soft); }
 .alert.warning { border: 1px solid var(--warning-border); color: var(--warning-text); background: var(--warning-soft); }
 .alert.info { border: 1px solid var(--brand-border); color: var(--brand-text); background: var(--brand-soft); }
+/* Estoque da Copa por time: de qual time é o estoque na tela (e a troca, para quem tem mais de um). */
+.stock-team-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; color: var(--text-secondary); font-size: var(--fs-sm); }
+.stock-team-bar label { display: flex; align-items: center; gap: 8px; }
+.stock-team-bar select { min-height: 34px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); background: var(--surface); font-weight: 600; }
+.stock-team-bar strong { color: var(--text); }
 /* Estado vazio e textos de apoio */
 .empty-state h3 { color: var(--text); }
 .empty-state p, .muted { color: var(--text-placeholder); }

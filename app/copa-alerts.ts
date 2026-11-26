@@ -1,7 +1,7 @@
 // Avisos da Copa: estoque baixo (sino e canal do chat) e pedidos novos para quem cuida das compras.
 import { and, eq, inArray } from "drizzle-orm";
 import { getDb } from "../db";
-import { appSettings, chatChannels, chatMessages, chatTopics, members, notifications } from "../db/schema";
+import { appSettings, chatChannels, chatMessages, chatTopics, members, notifications, teamMembers, teams } from "../db/schema";
 import { COPA_ALERTS_KEY, lowStockText, parseCopaAlerts, STOCK_TOPIC_TITLE, type CopaAlerts } from "./copa-tools";
 
 type Db = ReturnType<typeof getDb>;
@@ -21,11 +21,16 @@ export async function saveCopaAlerts(db: Db, alerts: CopaAlerts) {
   await db.insert(appSettings).values({ key: COPA_ALERTS_KEY, value, updatedAt: now }).onConflictDoUpdate({ target: appSettings.key, set: { value, updatedAt: now } });
 }
 
-/** Quem cuida das compras: as pessoas escolhidas (ativas) ou, sem escolha, os administradores. */
-export async function buyerIds(db: Db, alerts: CopaAlerts) {
+/**
+ * Quem cuida das compras: as pessoas escolhidas (ativas) ou, sem escolha, os administradores.
+ * Com um time (estoque daquele time), só as escolhidas que são do time; sem nenhuma, os administradores.
+ */
+export async function buyerIds(db: Db, alerts: CopaAlerts, teamId: number | null = null) {
   if (alerts.memberIds.length) {
     const rows = await db.select({ id: members.id }).from(members).where(and(inArray(members.id, alerts.memberIds), eq(members.active, true)));
-    if (rows.length) return rows.map((row) => row.id);
+    const inTeam = teamId === null ? null : new Set((await db.select({ memberId: teamMembers.memberId }).from(teamMembers).where(eq(teamMembers.teamId, teamId))).map((row) => row.memberId));
+    const chosen = rows.map((row) => row.id).filter((id) => !inTeam || inTeam.has(id));
+    if (chosen.length) return chosen;
   }
   const admins = await db.select({ id: members.id }).from(members).where(and(eq(members.role, "admin"), eq(members.active, true)));
   return admins.map((row) => row.id);
@@ -46,13 +51,15 @@ async function postToChannel(db: Db, channelId: number, text: string, now: strin
 }
 
 /** Avisa no sino quem cuida das compras (menos quem fez o lançamento) e publica no canal, se houver. */
-export async function alertLowStock(db: Db, entries: readonly { item: { name: string; unit: string; minimumQty: number }; available: number }[], actor: { id: number; name: string }) {
+export async function alertLowStock(db: Db, entries: readonly { item: { name: string; unit: string; minimumQty: number }; available: number }[], actor: { id: number; name: string }, teamId: number | null = null) {
   if (!entries.length) return;
   try {
     const now = new Date().toISOString();
     const alerts = await loadCopaAlerts(db);
-    const recipients = (await buyerIds(db, alerts)).filter((id) => id !== actor.id);
-    const texts = entries.map((entry) => lowStockText(entry.item, entry.available));
+    const recipients = (await buyerIds(db, alerts, teamId)).filter((id) => id !== actor.id);
+    // Cada time tem o próprio estoque: o aviso diz de qual.
+    const [team] = teamId === null ? [] : await db.select({ name: teams.name }).from(teams).where(eq(teams.id, teamId)).limit(1);
+    const texts = entries.map((entry) => `${team ? `${team.name}: ` : ""}${lowStockText(entry.item, entry.available)}`);
     const rows = recipients.flatMap((memberId) => texts.map((text) => ({ memberId, kind: "stock_low" as const, actorName: actor.name, body: text.slice(0, 140), createdAt: now })));
     for (let index = 0; index < rows.length; index += 20) await db.insert(notifications).values(rows.slice(index, index + 20));
     if (alerts.channelId) {

@@ -104,7 +104,7 @@ function PeopleChart({ report }: { report: InventoryReport }) {
   </div>;
 }
 
-export default function ReportsView() {
+export default function ReportsView({ stockTeamId = null }: { stockTeamId?: number | null }) {
   const [months, setMonths] = useState<number>(6);
   const [report, setReport] = useState<InventoryReport | null>(null);
   const [error, setError] = useState("");
@@ -117,7 +117,7 @@ export default function ReportsView() {
       setLoading(true);
       setError("");
       try {
-        const response = await fetch(`/api/reports?months=${months}`, { cache: "no-store" });
+        const response = await fetch(`/api/reports?months=${months}${stockTeamId ? `&team=${stockTeamId}` : ""}`, { cache: "no-store" });
         const data = await response.json() as InventoryReport & { error?: string };
         if (!response.ok) throw new Error(data.error || "Não foi possível gerar os relatórios.");
         if (!cancelled) setReport(data);
@@ -129,7 +129,7 @@ export default function ReportsView() {
     };
     void run();
     return () => { cancelled = true; };
-  }, [months]);
+  }, [months, stockTeamId]);
 
   const periodLabel = report ? `${monthLabel(report.months[0], "long")} a ${monthLabel(report.months.at(-1)!, "long")}`.toLocaleLowerCase("pt-BR") : "";
   const busiest = report?.people[0];

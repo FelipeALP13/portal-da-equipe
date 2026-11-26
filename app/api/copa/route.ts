@@ -8,6 +8,8 @@ import { readJsonBody } from "../../api-input";
 import { hasPermission } from "../../member-permissions";
 import { findSameRequest, MAX_REQUEST_NOTE, parseCopaAlerts, requestTitleError, sortRequests } from "../../copa-tools";
 import { buyerIds, loadCopaAlerts, notifyCopa, saveCopaAlerts } from "../../copa-alerts";
+import { loadStockTeams, resolveStockTeam } from "../../stock-teams";
+import { pickStockTeam } from "../../stock-team-rules";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -35,16 +37,18 @@ async function audit(db: Db, member: SessionMember, action: string, targetId: nu
   await writeAudit(db, { actorUserId: member.userId, actorName: member.name, action, targetType: "copa_request", targetId, details }).catch((error) => console.error("audit log failed", error));
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const db = getDb();
     const member = await getSessionMember(db);
     if (!member) return json({ error: "Entre com seu usuário e senha para acessar o sistema." }, 401);
     if (!member.active) return json({ error: "Seu acesso ao sistema está desativado." }, 403);
     const manager = canManage(member);
+    // Cada time tem o próprio estoque e os próprios pedidos.
+    const teamId = (await resolveStockTeam(db, member, new URL(request.url).searchParams.get("team"))).stockTeamId ?? -1;
     const [open, decided] = await Promise.all([
-      db.select().from(copaRequests).where(eq(copaRequests.status, "open")),
-      db.select().from(copaRequests).where(sql`${copaRequests.status} <> 'open'`).orderBy(desc(copaRequests.decidedAt)).limit(DECIDED_SHOWN),
+      db.select().from(copaRequests).where(and(eq(copaRequests.status, "open"), eq(copaRequests.teamId, teamId))),
+      db.select().from(copaRequests).where(and(sql`${copaRequests.status} <> 'open'`, eq(copaRequests.teamId, teamId))).orderBy(desc(copaRequests.decidedAt)).limit(DECIDED_SHOWN),
     ]);
     const rows = [...open, ...decided];
     const ids = rows.map((row) => row.id);
@@ -72,7 +76,7 @@ export async function GET() {
     if (manager && alerts) {
       const [channels, buyers] = await Promise.all([
         db.select({ id: chatChannels.id, name: chatChannels.name }).from(chatChannels).where(and(eq(chatChannels.kind, "channel"), eq(chatChannels.archived, false))).orderBy(chatChannels.name),
-        buyerIds(db, alerts),
+        buyerIds(db, alerts, teamId),
       ]);
       settings = {
         memberIds: alerts.memberIds, channelId: alerts.channelId, channels,
@@ -100,9 +104,12 @@ export async function POST(request: Request) {
     const now = new Date().toISOString();
     const manager = canManage(member);
 
+    // Só os pedidos dos times da pessoa (administradores, todos).
+    const stockTeams = await loadStockTeams(db, member);
+    const myTeamIds = stockTeams.map((team) => team.id);
     const requestFor = async (id: unknown) => {
       const [row] = await db.select().from(copaRequests).where(eq(copaRequests.id, Number(id))).limit(1);
-      return row ?? null;
+      return row && row.teamId !== null && myTeamIds.includes(row.teamId) ? row : null;
     };
 
     if (action === "saveAlerts") {
@@ -127,13 +134,15 @@ export async function POST(request: Request) {
       if (titleError) return json({ error: titleError }, 400);
       const title = clean(body.title, 80);
       const note = String(body.note ?? "").replace(/\r\n/g, "\n").trim().slice(0, MAX_REQUEST_NOTE);
-      const open = await db.select({ id: copaRequests.id, title: copaRequests.title, status: copaRequests.status, createdById: copaRequests.createdById }).from(copaRequests).where(eq(copaRequests.status, "open"));
+      const teamId = pickStockTeam(stockTeams, body.stockTeamId);
+      if (teamId === null) return json({ error: "Você não faz parte de um time com estoque da Copa." }, 403);
+      const open = await db.select({ id: copaRequests.id, title: copaRequests.title, status: copaRequests.status, createdById: copaRequests.createdById }).from(copaRequests).where(and(eq(copaRequests.status, "open"), eq(copaRequests.teamId, teamId)));
       const same = findSameRequest(open, title);
       if (same) return json({ error: "Alguém já pediu isso. Apoie o pedido que está na lista.", requestId: same.id }, 409);
       if (open.filter((row) => row.createdById === member.id).length >= MAX_OPEN_PER_PERSON) return json({ error: `Você já tem ${MAX_OPEN_PER_PERSON} pedidos aguardando. Espere alguns serem decididos.` }, 429);
-      const [created] = await db.insert(copaRequests).values({ title, note, createdById: member.id, createdByName: member.name, createdAt: now }).returning();
+      const [created] = await db.insert(copaRequests).values({ title, note, teamId, createdById: member.id, createdByName: member.name, createdAt: now }).returning();
       await db.insert(copaRequestVotes).values({ requestId: created.id, memberId: member.id }).onConflictDoNothing();
-      const buyers = (await buyerIds(db, await loadCopaAlerts(db))).filter((id) => id !== member.id);
+      const buyers = (await buyerIds(db, await loadCopaAlerts(db), teamId)).filter((id) => id !== member.id);
       await notifyCopa(db, buyers, member.name, `${member.name} pediu para a Copa: ${title}`);
       await audit(db, member, "copa_request_created", created.id, title);
       return json({ request: created }, 201);
@@ -162,7 +171,7 @@ export async function POST(request: Request) {
       let itemName = "";
       if (approve) {
         if (body.itemId) {
-          const [item] = await db.select({ id: items.id, name: items.name }).from(items).where(eq(items.id, Number(body.itemId))).limit(1);
+          const [item] = await db.select({ id: items.id, name: items.name }).from(items).where(and(eq(items.id, Number(body.itemId)), eq(items.teamId, row.teamId!))).limit(1);
           if (!item) return json({ error: "Item do estoque não encontrado." }, 404);
           itemId = item.id;
           itemName = item.name;
@@ -171,9 +180,9 @@ export async function POST(request: Request) {
           const category = clean(body.category, 40) || "Outros";
           const unit = clean(body.unit, 20) || "un.";
           const minimumQty = Math.max(0, Math.min(10000, Number(body.minimumQty) || 1));
-          const [existing] = await db.select({ id: items.id }).from(items).where(sql`lower(${items.name}) = lower(${name})`).limit(1);
+          const [existing] = await db.select({ id: items.id }).from(items).where(and(sql`lower(${items.name}) = lower(${name})`, eq(items.teamId, row.teamId!))).limit(1);
           if (existing) return json({ error: `Já existe "${name}" no estoque. Escolha ligar ao item existente.` }, 409);
-          const [item] = await db.insert(items).values({ name, category, unit, minimumQty, icon: "📦" }).returning();
+          const [item] = await db.insert(items).values({ name, category, unit, minimumQty, icon: "📦", teamId: row.teamId }).returning();
           itemId = item.id;
           itemName = item.name;
           await writeAudit(db, { actorUserId: member.userId, actorName: member.name, action: "item_created", targetType: "item", targetId: item.id, details: `${item.name} (pedido da equipe)` }).catch(() => undefined);

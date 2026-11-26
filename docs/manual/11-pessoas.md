@@ -36,7 +36,9 @@ Cada time tem nome, descrição, cor, integrantes e um ou mais **líderes**. O l
 1. Na aba **Times**, clique em **Novo time** (ou **Editar time**).
 2. Preencha **Nome do time** (ex.: "Suporte"), **Descrição** e **Cor**.
 3. Marque os integrantes e quem é **Líder**.
-4. Salve. Para apagar um time, use **Excluir**.
+4. Salve. Para apagar um time, use **Excluir**. Um time que ainda tem itens no estoque da Copa não pode ser excluído: exclua antes os itens do estoque dele.
+
+O time também define o estoque da Copa que a pessoa vê e mexe (veja [Um estoque por time](15-copa.md#um-estoque-por-time)).
 
 ## Férias e ausências
 

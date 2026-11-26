@@ -124,8 +124,9 @@ const SETS = {
     { key: "code", header: "Pedido", kind: "number", width: 8 }, { key: "title", header: "O que aconteceu", width: 36 }, { key: "location", header: "Onde", width: 18 }, { key: "priority", header: "Urgência", width: 12 },
     { key: "status", header: "Situação", width: 18 }, { key: "requester", header: "Pedido por", width: 20 }, { key: "assignee", header: "Responsável", width: 20 }, { key: "createdOn", header: "Aberto em", kind: "date", width: 12 }, { key: "resolvedOn", header: "Resolvido em", kind: "date", width: 12 },
   ] },
-  items: { label: "Itens do estoque", file: "estoque", importable: true, match: "O nome identifica o item. Saldos não mudam pela planilha: use compra ou ajuste.", fields: [
+  items: { label: "Itens do estoque", file: "estoque", importable: true, match: "O time e o nome identificam o item (cada time tem o próprio estoque). Saldos não mudam pela planilha: use compra ou ajuste.", fields: [
     { key: "name", header: "Item", required: true, max: 80, width: 28 },
+    { key: "team", header: "Time", max: 80, width: 16, hint: "Time dono do estoque. Em branco: o seu time (se você for de um só)." },
     { key: "category", header: "Categoria", max: 40, width: 16 },
     { key: "unit", header: "Unidade", max: 16, width: 9 },
     { key: "minimumQty", header: "Mínimo", kind: "number", width: 8 },
@@ -134,7 +135,7 @@ const SETS = {
     { key: "openedQty", header: "Aberto", kind: "number", readOnly: true, width: 8 },
   ] },
   movements: { label: "Histórico do estoque", file: "historico-estoque", importable: false, fields: [
-    { key: "day", header: "Dia", kind: "date", width: 12 }, { key: "item", header: "Item", width: 28 }, { key: "type", header: "Movimento", width: 14 }, { key: "quantity", header: "Quantidade", kind: "number", width: 10 }, { key: "person", header: "Quem", width: 20 }, { key: "note", header: "Observação", width: 34 },
+    { key: "day", header: "Dia", kind: "date", width: 12 }, { key: "team", header: "Time", width: 16 }, { key: "item", header: "Item", width: 28 }, { key: "type", header: "Movimento", width: 14 }, { key: "quantity", header: "Quantidade", kind: "number", width: 10 }, { key: "person", header: "Quem", width: 20 }, { key: "note", header: "Observação", width: 34 },
   ] },
 } satisfies Record<string, DataSet>;
 

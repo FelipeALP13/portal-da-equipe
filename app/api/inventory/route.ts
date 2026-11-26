@@ -11,6 +11,8 @@ import { findOverlappingWeek, generateRotation, isIsoDate, isSupportTeamColor, n
 import { readJsonBody } from "../../api-input";
 import { crossedLow, parseTripLines } from "../../copa-tools";
 import { alertLowStock } from "../../copa-alerts";
+import { loadStockTeams, resolveStockTeam } from "../../stock-teams";
+import { canUseStockTeam } from "../../stock-team-rules";
 
 type MovementType = "purchase" | "open" | "consume" | "adjust";
 
@@ -136,13 +138,16 @@ function safeMember<T extends { passwordHash?: string | null; passwordSalt?: str
   return rest as Omit<T, "passwordHash" | "passwordSalt" | "calendarTokenHash">;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const db = getDb();
     const currentMember = await requireMember(db);
     if (!currentMember.active) return Response.json({ error: "Seu acesso ao sistema está desativado. Fale com um administrador." }, { status: 403 });
+    // Cada time tem o próprio estoque: a tela pede um time e só recebe o dele (se a pessoa tiver acesso).
+    const { stockTeams, stockTeamId } = await resolveStockTeam(db, currentMember, new URL(request.url).searchParams.get("team"));
+    const teamFilter = eq(items.teamId, stockTeamId ?? -1);
     const [itemRows, movementRows, batchRows, memberRows, schedule] = await Promise.all([
-      db.select().from(items).orderBy(items.name),
+      db.select().from(items).where(teamFilter).orderBy(items.name),
       db
         .select({
           id: movements.id,
@@ -157,9 +162,10 @@ export async function GET() {
         })
         .from(movements)
         .innerJoin(items, eq(movements.itemId, items.id))
+        .where(teamFilter)
         .orderBy(desc(movements.createdAt), desc(movements.id))
         .limit(80),
-      db.select().from(openBatches).orderBy(desc(openBatches.openedAt)).limit(800),
+      db.select({ batch: openBatches }).from(openBatches).innerJoin(items, eq(openBatches.itemId, items.id)).where(teamFilter).orderBy(desc(openBatches.openedAt)).limit(800).then((rows) => rows.map((row) => row.batch)),
       canManage(currentMember.role)
         ? db.select({ id: members.id, userId: members.userId, name: members.name, email: members.email, username: members.username, role: members.role, permissions: members.permissions, active: members.active, avatarIcon: members.avatarIcon, avatarKey: members.avatarKey, createdAt: members.createdAt }).from(members).orderBy(members.name)
         : Promise.resolve([]),
@@ -209,6 +215,8 @@ export async function GET() {
       currentUser: { userId: currentMember.userId, name: currentMember.name, email: currentMember.email, username: currentMember.username, role: currentMember.role, permissions: currentPermissions, active: currentMember.active, avatarIcon: currentMember.avatarIcon, avatarKey: currentMember.avatarKey },
       members: visibleMembers,
       schedule,
+      stockTeams,
+      stockTeamId,
     });
   } catch (error) {
     console.error("inventory load failed", error);
@@ -444,8 +452,20 @@ export async function POST(request: Request) {
       return Response.json({ created: planned.length }, { status: 201 });
     }
 
+    // Estoque da Copa por time: só se mexe nos itens dos próprios times (administradores, em todos).
+    const stockActions = ["addItem", "seed", "updateItem", "deleteItem", "purchaseBatch", "movement"];
+    const stockTeams = stockActions.includes(action) ? await loadStockTeams(db, currentMember) : [];
+    const myStockTeamIds = stockTeams.map((team) => team.id);
+    const inMyStock = myStockTeamIds.length ? inArray(items.teamId, myStockTeamIds) : sql`0`;
+    const targetStockTeam = () => {
+      const teamId = Number(body.stockTeamId);
+      return canUseStockTeam(stockTeams, teamId) ? teamId : null;
+    };
+
     if (action === "addItem") {
       if (!hasPermission(currentMember, "manageItems")) return Response.json({ error: "Você não tem permissão para cadastrar itens." }, { status: 403 });
+      const teamId = targetStockTeam();
+      if (!teamId) return Response.json({ error: "Escolha um estoque do seu time." }, { status: 403 });
       const name = String(body.name ?? "").trim();
       const category = String(body.category ?? "Outros").trim() || "Outros";
       const unit = String(body.unit ?? "un.").trim() || "un.";
@@ -454,14 +474,16 @@ export async function POST(request: Request) {
       const icon = String(body.icon ?? "📦").trim().slice(0, 8) || "📦";
       const imageKey = mediaKeyFrom(body.imageKey, "items");
       if (!name) return Response.json({ error: "Informe o nome do item." }, { status: 400 });
-      const [item] = await db.insert(items).values({ name, category, unit, minimumQty, scanCode, icon, imageKey }).returning();
+      const [item] = await db.insert(items).values({ name, category, unit, minimumQty, scanCode, icon, imageKey, teamId }).returning();
       await safeAudit(db, { actorUserId: currentMember.userId, actorName: currentMember.name, action: "item_created", targetType: "item", targetId: item.id, details: item.name });
       return Response.json({ item }, { status: 201 });
     }
 
     if (action === "seed") {
       if (!hasPermission(currentMember, "manageItems")) return Response.json({ error: "Você não tem permissão para carregar a lista inicial." }, { status: 403 });
-      const existing = await db.select({ id: items.id }).from(items).limit(1);
+      const teamId = targetStockTeam();
+      if (!teamId) return Response.json({ error: "Escolha um estoque do seu time." }, { status: 403 });
+      const existing = await db.select({ id: items.id }).from(items).where(eq(items.teamId, teamId)).limit(1);
       if (existing.length) return Response.json({ error: "A lista já possui itens." }, { status: 409 });
       const now = Date.now();
       const created = await db.insert(items).values([
@@ -470,7 +492,7 @@ export async function POST(request: Request) {
         { name: "Biscoito", category: "Biscoitos e snacks", unit: "pacote", icon: "🍪", unopenedQty: 6, openedQty: 0, minimumQty: 3 },
         { name: "Leite", category: "Laticínios", unit: "caixa", icon: "🥛", unopenedQty: 1, openedQty: 1, minimumQty: 4, lastOpenedAt: new Date(now - 86400000).toISOString() },
         { name: "Chá", category: "Café e chá", unit: "caixa", icon: "🍵", unopenedQty: 2, openedQty: 0, minimumQty: 1 },
-      ]).returning();
+      ].map((item) => ({ ...item, teamId }))).returning();
       await safeAudit(db, { actorUserId: currentMember.userId, actorName: currentMember.name, action: "initial_items_created", targetType: "item", details: `${created.length} itens adicionados` });
       return Response.json({ items: created }, { status: 201 });
     }
@@ -485,8 +507,8 @@ export async function POST(request: Request) {
       const scanCode = String(body.scanCode ?? "").trim() || null;
       const icon = String(body.icon ?? "📦").trim().slice(0, 8) || "📦";
       if (!itemId || !name) return Response.json({ error: "Item inválido." }, { status: 400 });
-      const [previous] = await db.select().from(items).where(eq(items.id, itemId)).limit(1);
-      if (!previous) return Response.json({ error: "Item não encontrado." }, { status: 404 });
+      const [previous] = await db.select().from(items).where(and(eq(items.id, itemId), inMyStock)).limit(1);
+      if (!previous) return Response.json({ error: "Item não encontrado no estoque do seu time." }, { status: 404 });
       const imageKey = mediaKeyFrom(body.imageKey, "items", previous.imageKey);
       // O campo de código saiu da tela: sem ele no pedido, o código já salvo continua guardado.
       const [item] = await db.update(items).set({ name, category, unit, minimumQty, scanCode: body.scanCode === undefined ? previous.scanCode : scanCode, icon, imageKey, updatedAt: new Date().toISOString() }).where(eq(items.id, itemId)).returning();
@@ -499,8 +521,8 @@ export async function POST(request: Request) {
       if (!hasPermission(currentMember, "manageItems")) return Response.json({ error: "Você não tem permissão para excluir itens." }, { status: 403 });
       const itemId = number(body.itemId);
       if (!itemId) return Response.json({ error: "Item inválido." }, { status: 400 });
-      const [deleted] = await db.delete(items).where(eq(items.id, itemId)).returning();
-      if (!deleted) return Response.json({ error: "Item não encontrado." }, { status: 404 });
+      const [deleted] = await db.delete(items).where(and(eq(items.id, itemId), inMyStock)).returning();
+      if (!deleted) return Response.json({ error: "Item não encontrado no estoque do seu time." }, { status: 404 });
       await removeMedia(db, deleted.imageKey);
       await safeAudit(db, { actorUserId: currentMember.userId, actorName: currentMember.name, action: "item_deleted", targetType: "item", targetId: deleted.id, details: deleted.name });
       return Response.json({ item: deleted });
@@ -512,8 +534,8 @@ export async function POST(request: Request) {
       const { lines, error } = parseTripLines(body.lines);
       if (error) return Response.json({ error }, { status: 400 });
       const note = String(body.note ?? "").replace(/\s+/g, " ").trim().slice(0, 200) || "Compra no mercado";
-      const found = await db.select({ id: items.id, name: items.name, unit: items.unit }).from(items).where(inArray(items.id, lines.map((line) => line.itemId)));
-      if (found.length !== lines.length) return Response.json({ error: "Algum item da lista foi excluído. Atualize a página e confira." }, { status: 404 });
+      const found = await db.select({ id: items.id, name: items.name, unit: items.unit }).from(items).where(and(inArray(items.id, lines.map((line) => line.itemId)), inMyStock));
+      if (found.length !== lines.length) return Response.json({ error: "Algum item da lista foi excluído ou não é do estoque do seu time. Atualize a página e confira." }, { status: 404 });
       const timestamp = new Date().toISOString();
       const statements = lines.flatMap((line) => [
         db.update(items).set({ unopenedQty: sql`${items.unopenedQty} + ${line.quantity}`, updatedAt: timestamp }).where(eq(items.id, line.itemId)),
@@ -546,6 +568,9 @@ export async function POST(request: Request) {
         if (movementDate.error) return Response.json({ error: movementDate.error }, { status: 400 });
         retroactiveOccurredAt = movementDate.iso;
       }
+
+      const [allowed] = await db.select({ id: items.id }).from(items).where(and(eq(items.id, itemId), inMyStock)).limit(1);
+      if (!allowed) return Response.json({ error: "Item não encontrado no estoque do seu time." }, { status: 404 });
 
       const lockToken = crypto.randomUUID();
       await db.delete(inventoryLocks).where(and(eq(inventoryLocks.itemId, itemId), lt(inventoryLocks.acquiredAt, new Date(Date.now() - 30000).toISOString())));
@@ -670,7 +695,7 @@ export async function POST(request: Request) {
         // Caiu para o mínimo (ou acabou) com este lançamento: avisa quem cuida das compras.
         const before = current.unopenedQty + current.openedQty;
         const after = unopenedQty + openedQty;
-        if (crossedLow(before, after, current.minimumQty)) await alertLowStock(db, [{ item: current, available: Math.max(0, after) }], { id: currentMember.id, name: currentMember.name });
+        if (crossedLow(before, after, current.minimumQty)) await alertLowStock(db, [{ item: current, available: Math.max(0, after) }], { id: currentMember.id, name: currentMember.name }, current.teamId);
         await safeAudit(db, { actorUserId: currentMember.userId, actorName: currentMember.name, action: `stock_${type}`, targetType: "item", targetId: itemId, details: `${movementQuantity} ${current.unit}${retroactiveOccurredAt ? ` · movimentação em ${retroactiveOccurredAt}` : ""}` });
         return Response.json({ ok: true });
       } finally {

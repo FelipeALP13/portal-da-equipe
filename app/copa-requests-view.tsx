@@ -33,7 +33,7 @@ async function send(payload: Record<string, unknown>) {
 }
 
 /** Pedidos da equipe para a Copa: qualquer um pede, os outros apoiam e quem cuida das compras decide. */
-export function CopaRequestsView({ items, onStockChanged }: { items: Item[]; onStockChanged: () => void }) {
+export function CopaRequestsView({ stockTeamId = null, items, onStockChanged }: { stockTeamId?: number | null; items: Item[]; onStockChanged: () => void }) {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
   const [title, setTitle] = useState("");
@@ -45,14 +45,14 @@ export function CopaRequestsView({ items, onStockChanged }: { items: Item[]; onS
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch("/api/copa", { cache: "no-store" });
+      const response = await fetch(`/api/copa${stockTeamId ? `?team=${stockTeamId}` : ""}`, { cache: "no-store" });
       const next = await response.json() as Data & { error?: string };
       if (!response.ok) throw new Error(next.error || "Não foi possível carregar os pedidos.");
       setData(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível carregar os pedidos.");
     }
-  }, []);
+  }, [stockTeamId]);
   useLiveRefresh(load);
   // "+ Criar" > Pedido da copa: leva o cursor direto para o campo do pedido.
   const askInput = useRef<HTMLInputElement>(null);
@@ -82,7 +82,7 @@ export function CopaRequestsView({ items, onStockChanged }: { items: Item[]; onS
     setBusy(true);
     setError("");
     try {
-      await send({ action: "createRequest", title, note });
+      await send({ action: "createRequest", title, note, stockTeamId });
       setTitle("");
       setNote("");
       await load();

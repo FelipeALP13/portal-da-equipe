@@ -24,6 +24,16 @@ E quatro movimentações:
 
 Com as aberturas e consumos registrados, o Portal calcula quanto tempo cada item dura e prevê quando vai acabar.
 
+## Um estoque por time
+
+Cada time tem o próprio estoque: os itens, os saldos, a lista de compras, os pedidos, os relatórios e o histórico do Suporte não se misturam com os do Desenvolvimento.
+
+- Você vê e mexe só no estoque do seu time. O nome dele aparece no topo da tela, em **Estoque do time**.
+- Administradores (e quem está em mais de um time) escolhem o estoque na caixa **Estoque do time**. A escolha fica guardada neste navegador.
+- Quem ainda não está em nenhum time não tem estoque. Peça a um administrador para incluir você no seu time em [Pessoas e times](11-pessoas.md#times).
+- O aviso de estoque baixo vai para quem cuida das compras **daquele time** (sem ninguém do time escolhido, para os administradores) e diz de qual time é o item.
+- O mesmo código de barras pode existir no estoque de cada time.
+
 ## Itens e saldos
 
 ### Registrar uma movimentação
@@ -110,3 +120,5 @@ O administrador escolhe, para cada pessoa, o que ela faz no estoque (veja [Permi
 | Fazer e apoiar pedidos | Sim | Sim | Não |
 | Ver planejamento | Sim | Sim | Sim |
 | Ver relatórios e histórico | Sim | Sim | Sim |
+
+Todas as ações acima valem só para o estoque do seu time. Administradores mexem no estoque de qualquer time.
