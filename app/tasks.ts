@@ -14,6 +14,11 @@ export const taskStatusLabels: Record<TaskStatus, string> = {
   canceled: "Cancelado",
 };
 
+/** Demanda pausada não tem prazo (e por isso nunca conta como vencida). */
+export function dueDateForStatus(status: TaskStatus, dueDate: string | null) {
+  return status === "paused" ? null : dueDate;
+}
+
 /** Ordem de exibição: 1 crítica … 4 baixa, e 0 (sem prioridade) por último. */
 export const taskPriorities = [1, 2, 3, 4, 0] as const;
 export type TaskPriority = (typeof taskPriorities)[number];

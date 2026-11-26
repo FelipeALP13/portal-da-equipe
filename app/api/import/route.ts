@@ -5,7 +5,7 @@ import { getSessionMember } from "../../auth-session";
 import { writeAudit } from "../../audit";
 import { fold, mergeDemands, parseWorkbook, personKey, suspiciousHours, type Issue, type MergedDemand, type RawSheet, type WorkbookKind } from "../../demand-import";
 import { hasTrustedOrigin } from "../../request-security";
-import { taskCategories, type TaskStatus } from "../../tasks";
+import { dueDateForStatus, taskCategories, type TaskStatus } from "../../tasks";
 import { readJsonBody } from "../../api-input";
 
 type Db = ReturnType<typeof getDb>;
@@ -216,7 +216,7 @@ async function commit(db: Db, plan: Plan, actor: { userId: string; name: string 
           title: demand.title, description: "", status: demand.status, priority: demand.priority,
           assigneeId: owners[0] ?? null, teamId: demand.workbook === "leadership" ? null : teamIds[demand.workbook],
           clientId: demand.client ? clientIds.get(fold(demand.client)) ?? null : null, category: demand.category,
-          openedOn: demand.openedOn, startDate: demand.startDate, dueDate: demand.dueDate, completedOn: demand.completedOn,
+          openedOn: demand.openedOn, startDate: demand.startDate, dueDate: dueDateForStatus(demand.status, demand.dueDate), completedOn: demand.completedOn,
           estimatedHours: demand.estimatedHours, workedHours: demand.workedHours, baseHours: demand.workedHours, hoursFlag: plan.flaggedKeys.has(demand),
           origin: demand.origin.slice(0, 300), notes: demand.notes, sortOrder: position,
           createdById: null, createdByName: "Planilha",

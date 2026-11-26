@@ -4489,6 +4489,7 @@ html[data-theme="dark"] .schedule-year { color: var(--brand-text); }
 .task-fields.compact .task-prop-wide, .task-fields.compact > .task-prop:first-child { grid-column: 1 / -1; }
 .task-fields .people-picker-label { color: var(--text-secondary); font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0; text-transform: none; }
 .task-due-field { display: grid; gap: 7px; }
+.task-due-paused { margin: 0; color: var(--text-tertiary); font-size: var(--fs-2xs); }
 
 .segmented { display: flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-sunken); }
 .segmented button { flex: 1 1 0; min-width: max-content; min-height: 32px; padding: 0 10px; border: 0; border-radius: var(--radius-sm); color: var(--text-tertiary); background: transparent; font-size: var(--fs-sm); font-weight: 600; }

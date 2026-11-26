@@ -160,6 +160,8 @@ export default function TasksView({ openRequest = null, onOpenRequestHandled, cr
   async function update(taskId: number, changes: Record<string, unknown>) {
     if (!data) return;
     busy.current = true;
+    // Ao pausar, o prazo some (o servidor faz o mesmo).
+    if (changes.status === "paused") changes = { ...changes, dueDate: null, duePeriod: null };
     setData({ ...data, tasks: data.tasks.map((task) => task.id === taskId ? { ...task, ...changes } as Task : task) });
     try {
       const result = await postTask({ action: "updateTask", taskId, ...changes });

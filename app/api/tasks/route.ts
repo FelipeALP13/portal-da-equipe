@@ -7,7 +7,7 @@ import { commentRecipients, findMentions, snippet, type NotificationKind } from 
 import { getSessionMember, type SessionMember } from "../../auth-session";
 import { writeAudit } from "../../audit";
 import { hasTrustedOrigin } from "../../request-security";
-import { cleanMultiline, cleanTitle, isClosedStatus, isTaskPriority, isTaskStatus, MAX_COMMENT_LENGTH, MAX_DESCRIPTION_LENGTH, parseDueDate, sortOrderBetween, taskCategories, taskCode, taskStatusLabels, type TaskEventKind, type TaskStatus, parseDuePeriod } from "../../tasks";
+import { cleanMultiline, cleanTitle, dueDateForStatus, isClosedStatus, isTaskPriority, isTaskStatus, MAX_COMMENT_LENGTH, MAX_DESCRIPTION_LENGTH, parseDueDate, sortOrderBetween, taskCategories, taskCode, taskStatusLabels, type TaskEventKind, type TaskStatus, parseDuePeriod } from "../../tasks";
 import { readJsonBody } from "../../api-input";
 import { removeAttachmentsOf } from "../../attachments-store";
 import { sprints, taskDependencies, taskRecurrences } from "../../../db/schema";
@@ -402,6 +402,8 @@ export async function POST(request: Request) {
       const status = isTaskStatus(body.status) ? body.status : "todo";
       const priority = isTaskPriority(body.priority) ? body.priority : 0;
       const dates = { startDate: parseDueDate(body.startDate), dueDate: parseDueDate(body.dueDate) };
+      // Demanda criada já pausada não tem prazo.
+      if (dates.dueDate) dates.dueDate = dueDateForStatus(status, dates.dueDate);
       const ownersList = await activePeople(db, body.owners ?? (body.assigneeId ? [body.assigneeId] : []));
       const supportList = await activePeople(db, body.support ?? []);
       const team = await existingTeam(db, body.teamId);
@@ -548,6 +550,13 @@ export async function POST(request: Request) {
           changes[field] = value;
           if (field === "dueDate") events.push({ kind: "due_date", body: value ?? "" });
         }
+      }
+      // Demanda pausada não tem prazo: ao pausar (ou ao tentar dar prazo a uma pausada), o prazo some.
+      if ((changes.status ?? current.status) === "paused") {
+        const dueEvent = events.findIndex((event) => event.kind === "due_date");
+        if (dueEvent >= 0) events.splice(dueEvent, 1);
+        if (current.dueDate !== null) { changes.dueDate = null; events.push({ kind: "due_date", body: "" }); }
+        else delete changes.dueDate;
       }
       if ("duePeriod" in body || changes.dueDate === null) {
         const duePeriod = parseDuePeriod(body.duePeriod);

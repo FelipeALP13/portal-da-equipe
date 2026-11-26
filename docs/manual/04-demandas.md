@@ -24,6 +24,8 @@ No topo da tela aparece **Minhas demandas**, com as suas em aberto e as atrasada
 
 **Backlog** → **A Fazer** → **Fazendo** → **Em Validação** → **Concluído**. No caminho ela pode ficar **Aguardando Resposta**, **Bloqueado** ou **Pausado**. Demandas que não serão feitas ficam **Cancelado**.
 
+Demanda **Pausado** não tem prazo: ao pausar, o **Prazo** é apagado e a demanda deixa de contar como vencida. O campo fica bloqueado enquanto ela estiver pausada. Ao retomar, mude o status e defina um novo prazo.
+
 ### Prioridades
 
 **Crítica**, **Alta**, **Média**, **Baixa** ou sem prioridade.

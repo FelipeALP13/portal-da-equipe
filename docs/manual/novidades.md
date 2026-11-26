@@ -13,6 +13,10 @@ Como registrar (para quem altera o Portal):
 - Correções internas que não mudam nada para quem usa não entram.
 -->
 
+## 2026-11-26
+
+- **Demandas**: ao pausar uma demanda, o prazo é apagado e ela não conta mais como vencida. As que já estavam pausadas também ficaram sem prazo ([Demandas](04-demandas.md#status-de-uma-demanda)).
+
 ## 2026-11-25
 
 - **Clientes**: na ficha, **Mais → Desativar cliente**, **Reativar cliente** e **Excluir cliente** (só para cliente sem nada ligado; com histórico, o Portal oferece desativar) ([Clientes e Incidentes](07-clientes-e-incidentes.md#desativar-ou-excluir-um-cliente-administradores)).
