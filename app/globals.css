@@ -3177,6 +3177,9 @@ html[data-theme="dark"] .community {
 .community .cv-emoji { width: 320px; max-width: calc(100vw - 32px); }
 .community .cv-emoji.composer { bottom: calc(100% + 6px); left: 0; }
 .community .cv-emoji.align-right { top: 32px; right: 0; }
+/* Mensagem de outra pessoa: a barra de ações fica à esquerda, então o seletor abre a partir dela, para a direita (não sai da tela nem do painel). */
+.community .cv-post-group:not(.mine) .cv-actions-picker { position: static; }
+.community .cv-post-group:not(.mine) .cv-emoji.align-right { right: auto; left: 0; }
 .community .cv-emoji.align-left { left: 0; }
 .community .cv-emoji.down { top: 32px; }
 .community .cv-emoji header { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 0; }
@@ -3214,7 +3217,7 @@ html[data-theme="dark"] .community {
 /* Painel lateral (qualquer tela) */
 .chat-panel-button { position: relative; display: grid; width: 40px; height: 40px; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); color: var(--text-tertiary); background: var(--surface); cursor: pointer; }
 .chat-panel-button:hover, .chat-panel-button.active { border-color: var(--brand-border); color: var(--brand-text); }
-.chat-panel-button b { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border: 2px solid var(--surface); border-radius: 9px; color: white; background: var(--brand); font-size: var(--fs-xs); font-weight: 700; line-height: 14px; text-align: center; box-sizing: content-box; }
+.chat-panel-button b { position: absolute; top: -6px; right: -6px; display: grid; min-width: 18px; height: 18px; padding: 0 4px; place-items: center; border: 2px solid var(--surface); border-radius: 9px; color: white; background: var(--brand); font-size: var(--fs-2xs); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .chat-panel-button b.danger { background: var(--danger-solid); }
 .community.chat-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 75; display: flex; width: min(420px, 100vw); height: 100dvh; min-height: 0; flex-direction: column; border-left: 1px solid var(--cv-line); box-shadow: var(--cv-shadow); }
 .community.chat-panel > .cv-search { margin: 0 14px 6px; }
@@ -3224,6 +3227,7 @@ html[data-theme="dark"] .community {
 .community.chat-panel .cv-thread-head { min-height: 60px; padding: 8px 12px; }
 .community.chat-panel .cv-back { display: grid; }
 .community.chat-panel .cv-posts { padding: 6px 14px 12px; }
+.community.chat-panel .cv-emoji { width: 300px; max-width: calc(100vw - 96px); }
 
 /* Janela de escolher pessoa (fora da área do chat) */
 .person-picker-body { padding: 14px 25px 20px; }
