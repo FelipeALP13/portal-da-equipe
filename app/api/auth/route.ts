@@ -291,9 +291,15 @@ export async function POST(request: Request) {
     if (limit.blocked) return Response.json({ error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } });
     const [member] = await db.select().from(members).where(eq(members.username, username)).limit(1);
     // Usuário inexistente também calcula um hash: o tempo de resposta não revela quem existe.
-    const valid = member?.passwordHash && member.passwordSalt
+    let valid = member?.passwordHash && member.passwordSalt
       ? await verifyPassword(password, member.passwordHash, member.passwordSalt)
       : (await verifyPassword(password, "0".repeat(64), "usuario-inexistente"), false);
+    // Espaço sobrando no começo ou no fim (senha colada ou preenchida pelo navegador): tenta sem ele.
+    // A senha exata vale primeiro, então quem cadastrou senha com espaço continua entrando.
+    const trimmed = password.trim();
+    if (!valid && member?.passwordHash && member.passwordSalt && trimmed && trimmed !== password) {
+      valid = await verifyPassword(trimmed, member.passwordHash, member.passwordSalt);
+    }
     if (!member || !valid) {
       const failure = await recordRateLimitFailure(limitKey, { maxAttempts: 5, windowMinutes: 15, blockMinutes: 15 }, db);
       await recordRateLimitFailure(accountKey, { maxAttempts: 30, windowMinutes: 60, blockMinutes: 15 }, db);

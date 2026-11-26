@@ -8,6 +8,8 @@
 2. Digite o **Usuário** e a **Senha** que o administrador cadastrou para você.
 3. Clique em **Entrar**.
 
+O **Usuário** não diferencia maiúsculas de minúsculas. Espaços sobrando no começo ou no fim do usuário e da senha (comuns ao colar) são ignorados.
+
 Se a sua conta tiver a verificação em duas etapas ligada, o Portal pede em seguida o **código do aplicativo autenticador** (veja abaixo).
 
 **Esqueceu a senha ou perdeu o celular?** Não existe "esqueci a senha" por e-mail. Peça para um administrador redefinir a sua senha (ou desligar a verificação em duas etapas) em **Usuários**.

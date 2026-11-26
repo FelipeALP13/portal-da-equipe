@@ -15,6 +15,7 @@ Como registrar (para quem altera o Portal):
 
 ## 2026-11-26
 
+- **Entrar no Portal**: espaços sobrando no começo ou no fim da senha (ao colar ou no preenchimento automático) não impedem mais a entrada ([Primeiros passos](01-primeiros-passos.md#entrar-no-portal)).
 - **Demandas**: ao pausar uma demanda, o prazo é apagado e ela não conta mais como vencida. As que já estavam pausadas também ficaram sem prazo ([Demandas](04-demandas.md#status-de-uma-demanda)).
 
 ## 2026-11-25

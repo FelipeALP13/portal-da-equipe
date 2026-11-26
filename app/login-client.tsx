@@ -50,7 +50,7 @@ export default function LoginScreen() {
       const response = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(challenge ? { action: "login2fa", challenge, code } : { action: setupRequired ? "setup" : "login", name, email, username, password, ...(setupRequired ? { setupToken } : {}) }),
+        body: JSON.stringify(challenge ? { action: "login2fa", challenge, code } : { action: setupRequired ? "setup" : "login", name, email, username: username.trim(), password, ...(setupRequired ? { setupToken } : {}) }),
       });
       const data = await response.json() as { error?: string; twoFactor?: boolean; challenge?: string; restart?: boolean };
       if (!response.ok) {
