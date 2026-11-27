@@ -526,7 +526,7 @@ export const notifications = sqliteTable("notifications", {
   memberId: integer("member_id")
     .notNull()
     .references(() => members.id, { onDelete: "cascade" }),
-  kind: text("kind", { enum: ["task_assigned", "task_comment", "task_mention", "task_status", "ticket_new", "ticket_assigned", "ticket_comment", "ticket_mention", "ticket_status", "ticket_late", "agenda_reminder", "agenda_invite", "ticket_rate", "task_unblocked", "handoff", "celebration", "system_down", "system_up", "onboarding", "review_open", "review_reminder", "goal_update", "one_on_one", "dev_action", "pulse_open", "announcement", "incident", "asset_expiring", "chat_mention", "chat_message", "chat_reminder", "stock_low", "copa_request", "kudos", "poll", "maintenance", "security_alert", "absence_request", "absence_decision", "shift_swap", "standup_blocker"] }).notNull(),
+  kind: text("kind", { enum: ["task_assigned", "task_comment", "task_mention", "task_status", "ticket_new", "ticket_assigned", "ticket_comment", "ticket_mention", "ticket_status", "ticket_late", "agenda_reminder", "agenda_invite", "ticket_rate", "task_unblocked", "handoff", "celebration", "system_down", "system_up", "onboarding", "review_open", "review_reminder", "goal_update", "one_on_one", "dev_action", "pulse_open", "announcement", "incident", "asset_expiring", "chat_mention", "chat_message", "chat_reminder", "stock_low", "copa_request", "portal_report", "kudos", "poll", "maintenance", "security_alert", "absence_request", "absence_decision", "shift_swap", "standup_blocker"] }).notNull(),
   taskId: integer("task_id").references(() => tasks.id, { onDelete: "cascade" }),
   ticketId: integer("ticket_id").references(() => tickets.id, { onDelete: "cascade" }),
   eventId: integer("event_id").references(() => agendaEvents.id, { onDelete: "cascade" }),
@@ -1189,3 +1189,24 @@ export const ticketSummaries = sqliteTable("ticket_summaries", {
   basedOn: integer("based_on").notNull().default(0),
   createdAt: text("created_at").notNull(),
 });
+
+/** Problemas e sugestões do próprio Portal, relatados pela equipe e acompanhados pelos administradores. */
+export const portalReports = sqliteTable("portal_reports", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  kind: text("kind", { enum: ["bug", "idea"] }).notNull().default("bug"),
+  title: text("title").notNull(),
+  details: text("details").notNull().default(""),
+  /** Tela do Portal onde a pessoa estava ao relatar (ex.: "Demandas"). */
+  screen: text("screen").notNull().default(""),
+  /** Navegador e tamanho da janela, para reproduzir o problema. */
+  device: text("device").notNull().default(""),
+  imageKey: text("image_key"),
+  status: text("status", { enum: ["open", "doing", "done", "declined"] }).notNull().default("open"),
+  /** Resposta de quem cuida do Portal (aparece para quem relatou). */
+  response: text("response").notNull().default(""),
+  createdById: integer("created_by_id").references(() => members.id, { onDelete: "set null" }),
+  createdByName: text("created_by_name").notNull().default("Equipe"),
+  updatedByName: text("updated_by_name"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+}, (table) => [index("portal_reports_status_idx").on(table.status, table.createdAt)]);

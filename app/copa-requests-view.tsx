@@ -60,7 +60,7 @@ export function CopaRequestsView({ stockTeamId = null, items, onStockChanged }: 
 
   useEffect(() => {
     const first = window.setTimeout(() => { void load(); }, 0);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 30000);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60000);
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
   }, [load]);
 

@@ -33,7 +33,7 @@ export function useConversations() {
   useLiveRefresh(load);
   useEffect(() => {
     const first = window.setTimeout(() => { void load(); }, 0);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 10000);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 30000);
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
   }, [load]);
   return { list, error, setError, load };

@@ -294,7 +294,7 @@ function RetroBoard({ retroId, onOpenTask, onChanged, onDeleted }: { retroId: nu
   useEffect(() => {
     const first = window.setTimeout(() => { void load(); }, 0);
     // Durante a reunião, todos veem os itens novos.
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 10000);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60000);
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
   }, [load]);
 

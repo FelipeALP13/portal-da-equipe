@@ -107,7 +107,20 @@ O sino mostra os avisos para você: demandas e chamados (atribuições, comentá
 - Filtre por **Todos**, **Não lidos**, **Menções**, **Demandas e chamados**, **Chat**, **Prazos** e **Atividade**.
 - Clique num aviso para abrir o item.
 - **Marcar todas como lidas** limpa a contagem.
+- As demandas que vencem hoje, amanhã ou já venceram aparecem no topo da lista e contam no número do sino até você abrir o sino naquele dia. Depois continuam na lista, mas não contam mais; no dia seguinte voltam a contar.
 - **Receber avisos também com o Portal minimizado** liga o aviso do sistema operacional enquanto o Portal está aberto em segundo plano.
+
+### Reportar um problema no Portal
+
+Achou um erro ou tem uma ideia para o Portal? Conte por aqui, em vez de mandar no chat: fica registrado e você acompanha.
+
+1. No menu, clique em **Reportar problema** (fica abaixo da **Ajuda**). Também dá pelo **+ Criar → Reportar problema no Portal** ou pela busca (**Ctrl + K**).
+2. Clique em **Reportar problema** e escolha **Erro ou algo estranho** ou **Sugestão de melhoria**.
+3. Preencha **O que aconteceu?** (ou **Qual a ideia?**) e, se quiser, os **Detalhes**: o que você fez antes, o que esperava e o que apareceu.
+4. Se ajudar, clique em **Anexar print** ou cole a imagem com **Ctrl + V**.
+5. Clique em **Enviar**. O Portal guarda junto a tela em que você estava.
+
+Os administradores recebem o aviso no sino. Quando eles mudam a situação (**Recebido**, **Em correção**, **Resolvido** ou **Não será feito**) ou respondem, você recebe o aviso. Seus relatos ficam em **Abertos** e, depois de decididos, em **Resolvidos e encerrados**. Enquanto ainda está **Recebido**, você pode **Tirar** o relato.
 
 ### Janelas de confirmação
 
@@ -137,6 +150,8 @@ Se você abrir um endereço que não existe, o Portal mostra **Página não enco
 | --- | --- | --- | --- |
 | Entrar, mudar a própria senha, foto, tema e avisos | Sim | Sim | Sim |
 | Ler a Ajuda | Sim | Sim | Sim |
+| Reportar problema e acompanhar os próprios relatos | Sim | Sim | Sim |
+| Ver todos os relatos, mudar a situação e responder | Sim | Não | Não |
 | Ligar e desligar a própria verificação em duas etapas | Sim | Sim | Sim |
 | Usar o botão "+ Criar" | Sim | Sim | Não |
 | Redefinir a senha ou a verificação de outra pessoa | Sim | Não | Não |

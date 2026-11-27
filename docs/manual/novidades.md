@@ -13,6 +13,14 @@ Como registrar (para quem altera o Portal):
 - Correções internas que não mudam nada para quem usa não entram.
 -->
 
+## 2026-11-27
+
+- **Reportar problema**: novo lugar para relatar erros e sugestões do Portal, com print e a tela onde aconteceu. Você acompanha a situação e recebe a resposta no sino ([Primeiros passos](01-primeiros-passos.md#reportar-um-problema-no-portal)).
+- **Demandas**: a gaveta da demanda ficou mais larga e as propriedades aparecem em linhas (nome à esquerda, valor à direita), mais fáceis de ler ([Demandas](04-demandas.md)).
+- **Sino de avisos**: os prazos de demandas deixam de contar no número depois que você abre o sino no dia ([Primeiros passos](01-primeiros-passos.md#sino-de-avisos)).
+- **Chat**: no painel ao lado, dá para fechar o chat direto de dentro de uma conversa ([Chat](09-chat.md)).
+- **Ajustes de tela**: respostas da daily sem espaços em branco sobrando, caixas de **Quem usa** na licença do tamanho certo e botões do topo todos com a mesma altura.
+
 ## 2026-11-26
 
 - **Chat**: as imagens da busca de GIFs (Giphy) voltaram a aparecer, e os GIFs enviados também ([Chat](09-chat.md)).

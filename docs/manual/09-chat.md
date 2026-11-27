@@ -9,7 +9,7 @@ Conversar com a equipe sem sair do Portal: **canais** abertos para todos e **con
 ## Onde fica
 
 - **Chat** no menu abre o chat em tela cheia.
-- O botão de chat na barra do topo abre o chat **num painel ao lado**, para responder de qualquer tela sem sair do que você está fazendo. **Abrir em tela cheia** leva para a tela do Chat.
+- O botão de chat na barra do topo abre o chat **num painel ao lado**, para responder de qualquer tela sem sair do que você está fazendo. **Abrir em tela cheia** leva para a tela do Chat. Dentro de uma conversa, o **X** do topo fecha o painel direto (a seta volta para a lista de conversas).
 
 O número no menu mostra as mensagens não lidas; em vermelho, há mensagem em conversa direta.
 

@@ -5,7 +5,7 @@
 // por alguns segundos e a tela o atende ao montar; se ela já está aberta, atende pelo evento.
 import { useEffect, useRef } from "react";
 
-export type CreateKind = "agenda" | "absence" | "copa";
+export type CreateKind = "agenda" | "absence" | "copa" | "report";
 
 const EVENT = "portal:create-request";
 const MAX_WAIT_MS = 5000;

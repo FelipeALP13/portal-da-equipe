@@ -439,7 +439,7 @@ const CACHE_MESSAGES = 60;
 /** A cada 3 s vêm só as novidades; a cada 5 ciclos vem tudo (edições, reações, enquetes e fixadas). */
 const FULL_EVERY = 5;
 
-export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpenFull, actions, focus }: { topicId: number; people: Person[]; me: Me; compact?: boolean; onChanged?: () => void; onBack?: () => void; onOpenFull?: () => void; actions?: (channel: ChannelInfo) => React.ReactNode; focus?: { id: number; key: number } | null }) {
+export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpenFull, onClose, actions, focus }: { topicId: number; people: Person[]; me: Me; compact?: boolean; onChanged?: () => void; onBack?: () => void; onOpenFull?: () => void; onClose?: () => void; actions?: (channel: ChannelInfo) => React.ReactNode; focus?: { id: number; key: number } | null }) {
   const cacheKey = `${me.id}:${topicId}`;
   const [cached] = useState(() => threadCache.get(cacheKey));
   const [pinned, setPinned] = useState<PinnedMessage[]>(cached?.pinned ?? []);
@@ -540,7 +540,7 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
       if (document.visibilityState !== "visible") return;
       tick = (tick + 1) % FULL_EVERY;
       void sync(tick === 0);
-    }, 3000);
+    }, 8000);
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
   }, [load, sync]);
 
@@ -655,6 +655,7 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
       {channel && actions?.(channel)}
       <button className="cv-icon-button" onClick={() => setPickingWallpaper(true)} aria-label="Fundo das conversas" title="Fundo das conversas"><ImageIcon size={16} /></button>
       {onOpenFull && <button className="cv-icon-button" onClick={onOpenFull} aria-label="Abrir em tela cheia" title="Abrir em tela cheia"><Maximize2 size={16} /></button>}
+      {onClose && <button className="cv-icon-button" onClick={onClose} aria-label="Fechar chat" title="Fechar chat"><X size={18} /></button>}
     </header>
     {pickingWallpaper && <ChatWallpaperPicker wallpaper={wallpaper} onChange={setWallpaper} onClose={() => setPickingWallpaper(false)} upload={(file) => uploadImage(file, "chat")} />}
     {pinned.length > 0 && <div className="cv-pinbar">

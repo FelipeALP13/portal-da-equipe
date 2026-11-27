@@ -13,6 +13,11 @@ type Data = { day: string; canWrite: boolean; mine: Entry | null; previousPlan: 
 
 const firstName = (name: string) => name.split(/\s+/)[0];
 
+/** Resposta como a pessoa escreveu, sem linhas em branco sobrando (no começo, no fim ou várias seguidas). */
+function tidy(text: string | null | undefined) {
+  return (text ?? "").replace(/[ \t]+$/gm, "").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 export function StandupCard() {
   const [data, setData] = useState<Data | null>(null);
   const [editing, setEditing] = useState(false);
@@ -88,9 +93,9 @@ export function StandupCard() {
       <button type="button" className="standup-toggle" aria-expanded={open} onClick={() => setOpen((value) => !value)}>{open ? "Esconder as respostas" : `Ver as respostas (${answered})`} <ChevronDown size={14} /></button>
       {open && <ul className="standup-list">{data.entries.map((entry) => <li key={entry.memberId}>
         <strong>{entry.name}</strong>
-        {entry.yesterday && <p><span>Ontem</span>{entry.yesterday}</p>}
-        <p><span>Hoje</span>{entry.today}</p>
-        {entry.blockers && <p className="blocker"><span>Bloqueio</span>{entry.blockers}</p>}
+        {tidy(entry.yesterday) && <p><span>Ontem</span>{tidy(entry.yesterday)}</p>}
+        <p><span>Hoje</span>{tidy(entry.today)}</p>
+        {tidy(entry.blockers) && <p className="blocker"><span>Bloqueio</span>{tidy(entry.blockers)}</p>}
       </li>)}</ul>}
     </>}
     {data.missing.length > 0 && answered > 0 && <p className="standup-missing">Ainda não responderam: {data.missing.map((person) => firstName(person.name)).join(", ")}</p>}

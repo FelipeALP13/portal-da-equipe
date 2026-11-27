@@ -41,7 +41,7 @@ export default function ChatPanel({ onClose, onOpenFull }: { onClose: () => void
   const conversations = (list?.channels ?? []).filter((entry) => !entry.archived && (!term || fold(`${entry.name} ${entry.topic}`).includes(term)))
     .sort((a, b) => b.unread - a.unread || (b.preview?.at ?? "").localeCompare(a.preview?.at ?? "") || a.name.localeCompare(b.name));
   return <aside className="community chat-panel" aria-label="Chat">
-    {open && list ? <Thread key={open.topicId} topicId={open.topicId} focus={open.focus ?? null} people={list.people} me={list.me} compact onChanged={() => void load()} onBack={() => { setOpen(null); void load(); }} onOpenFull={() => onOpenFull(open.channelId)} />
+    {open && list ? <Thread key={open.topicId} topicId={open.topicId} focus={open.focus ?? null} people={list.people} me={list.me} compact onChanged={() => void load()} onBack={() => { setOpen(null); void load(); }} onClose={onClose} onOpenFull={() => onOpenFull(open.channelId)} />
       : <>
         <header className="chat-panel-head">
           {list && <MyStatus me={list.me} people={list.people} onChanged={() => void load()} />}

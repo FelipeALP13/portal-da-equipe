@@ -151,7 +151,7 @@ export default function TicketsView({ openRequest = null, onOpenRequestHandled, 
 
   useEffect(() => {
     const first = window.setTimeout(() => { void load(); }, 0);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 20000);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60000);
     // Chamados novos do Jira: recarrega na hora.
     const onJira = () => { void load(); };
     window.addEventListener(TICKETS_CHANGED, onJira);

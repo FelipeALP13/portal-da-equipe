@@ -71,7 +71,7 @@ export default function TasksView({ openRequest = null, onOpenRequestHandled, cr
 
   useEffect(() => {
     const first = window.setTimeout(() => { setView(readView()); void load(); }, 0);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible" && !busy.current) void load(); }, 30000);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible" && !busy.current) void load(); }, 60000);
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
   }, [load]);
 

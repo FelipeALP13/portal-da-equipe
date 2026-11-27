@@ -33,6 +33,8 @@ import BookOpen from "lucide-react/icons/book-open";
 import KnowledgeView, { type ArticleDraft } from "./knowledge-view";
 import AdminView from "./admin-view";
 import HelpView from "./help-view";
+import PortalReportsView from "./portal-reports-view";
+import Bug from "lucide-react/icons/bug";
 import CircleHelp from "lucide-react/icons/circle-help";
 import CalendarView from "./calendar-view";
 import AgendaView from "./agenda-view";
@@ -106,7 +108,7 @@ export default function Home() {
   const [notice, setNotice] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "low" | "open">("all");
-  const [tab, setTab] = useState<"hub" | "stock" | "schedule" | "tasks" | "projects" | "panel" | "tickets" | "knowledge" | "admin" | "calendar" | "agenda" | "people" | "planning" | "reports" | "history" | "team" | "clients" | "sprints" | "reviews" | "community" | "requests" | "maintenance" | "help">("hub");
+  const [tab, setTab] = useState<"hub" | "stock" | "schedule" | "tasks" | "projects" | "panel" | "tickets" | "knowledge" | "admin" | "calendar" | "agenda" | "people" | "planning" | "reports" | "history" | "team" | "clients" | "sprints" | "reviews" | "community" | "requests" | "maintenance" | "help" | "portalReports">("hub");
   const [communityTab, setCommunityTab] = useState<{ key: number; channel: number | null }>({ key: 0, channel: null });
   // Painel de conversas ao lado, em qualquer tela.
   const [chatPanel, setChatPanel] = useState(false);
@@ -142,6 +144,13 @@ export default function Home() {
     if (!window.matchMedia("(hover: hover)").matches) setMenuHover(false);
   }
   /** Abre a tela de um aviso; 1:1 e clima são abas de Avaliações e metas. */
+  // Reportar problema: guarda a tela de onde a pessoa veio (vai junto do relato).
+  const [reportScreen, setReportScreen] = useState("");
+  function openReports(create = false) {
+    if (tab !== "portalReports") setReportScreen(document.querySelector(".topbar h1")?.textContent?.trim() ?? "");
+    go("portalReports");
+    if (create) requestCreate("report");
+  }
   function openView(view: typeof tab | "one_on_ones" | "pulse" | "incidents" | "assets" | "absences" | "chat") {
     if (view === "chat") {
       go("community");
@@ -281,11 +290,11 @@ export default function Home() {
     const refresh = () => {
       if (document.visibilityState === "visible") void load(true);
     };
-    const interval = window.setInterval(refresh, 5000);
+    // Sem relógio próprio: o aviso ao vivo (useLiveRefresh) já recarrega quando alguém muda algo.
+    // Aqui só ao voltar para a aba. Cada consulta conta no limite diário da Cloudflare.
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refresh);
     return () => {
-      window.clearInterval(interval);
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", refresh);
     };
@@ -377,9 +386,10 @@ export default function Home() {
     { id: "new-event", label: "Novo compromisso", hint: "Criar", keywords: "criar agenda reuniao anotacao lembrete teams meet", icon: NotebookPen, run: () => { openAgenda(); requestCreate("agenda"); } },
     { id: "new-absence", label: "Pedir ausência", hint: "Criar", keywords: "ferias folga atestado ausencia licenca", icon: CalendarOff, run: () => { openView("absences"); requestCreate("absence"); } },
     { id: "new-copa", label: "Pedido da copa", hint: "Criar", keywords: "copa cafe pedir item lanche faltando", icon: Coffee, run: () => { go("requests", true); requestCreate("copa"); } },
+    { id: "new-report", label: "Reportar problema no Portal", hint: "Criar", keywords: "erro bug defeito sugestao melhoria problema sistema portal", icon: Bug, run: () => openReports(true) },
   ] : [];
   // O "+ Criar" não repete o que a tela aberta já cria com botão próprio (na Visão geral: demanda e chamado).
-  const createHidden: string[] = tab === "hub" ? ["new-task", "new-ticket"] : tab === "tasks" ? ["new-task"] : tab === "tickets" ? ["new-ticket"] : tab === "agenda" ? ["new-event"] : tab === "requests" ? ["new-copa"] : tab === "people" && subTab.people === "absences" ? ["new-absence"] : [];
+  const createHidden: string[] = tab === "hub" ? ["new-task", "new-ticket"] : tab === "tasks" ? ["new-task"] : tab === "tickets" ? ["new-ticket"] : tab === "agenda" ? ["new-event"] : tab === "requests" ? ["new-copa"] : tab === "portalReports" ? ["new-report"] : tab === "people" && subTab.people === "absences" ? ["new-absence"] : [];
   const createMenu = createActions.filter((action) => !createHidden.includes(action.id));
   const quickActions: QuickAction[] = [
     ...createActions,
@@ -396,6 +406,7 @@ export default function Home() {
     { id: "go-reviews", label: "Avaliações e metas", hint: "Ir para", keywords: "1:1 clima okr", icon: ClipboardCheck, run: () => go("reviews") },
     { id: "go-stock", label: "Estoque da copa", hint: "Ir para", keywords: "cafe compras itens", icon: PackageCheck, run: () => go("stock", true) },
     { id: "profile", label: "Meu perfil", hint: "Abrir", keywords: "senha foto tema escuro notificacoes", icon: UserCog, run: () => { if (currentUser) setModal({ kind: "profile" }); } },
+    { id: "go-reports", label: "Problemas do Portal", hint: "Ir para", keywords: "erro bug defeito sugestao relato reportar", icon: Bug, run: () => openReports() },
     { id: "go-help", label: "Ajuda: manual do Portal", hint: "Ir para", keywords: "ajuda manual como usar duvida passo a passo permissao", icon: CircleHelp, run: () => go("help") },
     { id: "tour", label: "Ver o tour do Portal", hint: "Abrir", keywords: "ajuda como usar", icon: Sparkles, run: () => window.dispatchEvent(new Event(OPEN_TOUR_EVENT)) },
     ...(isAdmin ? [
@@ -453,6 +464,7 @@ export default function Home() {
           ] : [] },
           { items: [
             { key: "help", label: "Ajuda", icon: <CircleHelp />, onClick: () => go("help") },
+            { key: "portalReports", label: "Reportar problema", icon: <Bug />, onClick: () => openReports() },
           ] },
         ]} />
       </aside>
@@ -460,7 +472,7 @@ export default function Home() {
       <main>
         <header className="topbar">
           <button className="menu-button" onClick={() => setMobileMenu(true)} aria-label="Abrir menu"><Menu /></button>
-          <div><h1>{tab === "hub" ? "Visão geral" : tab === "stock" ? "Estoque" : tab === "schedule" ? "Escala de atendimento" : tab === "tasks" ? "Demandas" : tab === "projects" ? "Projetos grandes" : tab === "panel" ? "Painel da liderança" :tab === "tickets" ? "Chamados internos" : tab === "knowledge" ? "Base de conhecimento" : tab === "admin" ? "Marca, histórico e cópia de segurança" : tab === "calendar" ? "Calendário" : tab === "agenda" ? "Minha agenda" : tab === "clients" ? "Clientes e sistemas" : tab === "reviews" ? "Avaliações e metas" : tab === "community" ? "Chat da equipe" : tab === "sprints" ? "Sprints e retrospectivas" :tab === "people" ? "Pessoas e times" :tab === "planning" ? "Planejamento do estoque" : tab === "requests" ? "Pedidos da Copa" : tab === "maintenance" ? "Manutenção do escritório" : tab === "reports" ? "Relatórios" : tab === "team" ? "Usuários e permissões" : tab === "help" ? "Ajuda" : "Histórico do estoque"}</h1></div>
+          <div><h1>{tab === "hub" ? "Visão geral" : tab === "stock" ? "Estoque" : tab === "schedule" ? "Escala de atendimento" : tab === "tasks" ? "Demandas" : tab === "projects" ? "Projetos grandes" : tab === "panel" ? "Painel da liderança" :tab === "tickets" ? "Chamados internos" : tab === "knowledge" ? "Base de conhecimento" : tab === "admin" ? "Marca, histórico e cópia de segurança" : tab === "calendar" ? "Calendário" : tab === "agenda" ? "Minha agenda" : tab === "clients" ? "Clientes e sistemas" : tab === "reviews" ? "Avaliações e metas" : tab === "community" ? "Chat da equipe" : tab === "sprints" ? "Sprints e retrospectivas" :tab === "people" ? "Pessoas e times" :tab === "planning" ? "Planejamento do estoque" : tab === "requests" ? "Pedidos da Copa" : tab === "maintenance" ? "Manutenção do escritório" : tab === "reports" ? "Relatórios" : tab === "team" ? "Usuários e permissões" : tab === "help" ? "Ajuda" : tab === "portalReports" ? "Problemas do Portal" : "Histórico do estoque"}</h1></div>
           <div className="topbar-actions"><DataToolsButton screen={tab} onImported={() => { void load(true); setDataVersion((value) => value + 1); }} />{currentUser?.active && currentUser.role !== "viewer" && <TimerBadge onOpenTask={openTask} />}{createMenu.length > 0 && <MoreMenu label="Criar" title={createMenu.map((action) => action.label).join(", ")} icon={<Plus size={16} />} className="primary-button create-menu-button" actions={createMenu.map((action) => { const Icon = action.icon ?? Plus; return { key: action.id, label: action.label, icon: <Icon size={15} />, onClick: action.run }; })} />}<CommandSearch onPick={openSearchHit} actions={quickActions} />{currentUser?.active && tab !== "community" && <ChatPanelButton unread={navCounts?.chat ?? 0} direct={navCounts?.chatDirect ?? 0} active={chatPanel} onClick={() => setChatPanel((value) => !value)} />}<NotificationsBell onOpenTask={openTask} onOpenTicket={openTicket} onOpenEvent={openAgenda} onOpenView={(view) => openView(view)} /><span className="role-chip">{currentUser ? roleLabel(currentUser.role) : "Carregando"}</span></div>
         </header>
 
@@ -543,7 +555,7 @@ export default function Home() {
                 </div>
               )}
             </>
-          ) : tab === "schedule" ? <ScheduleView schedule={schedule} loading={loading} canEdit={permissions.manageSchedule} onNewTeam={() => setModal({ kind: "supportTeam" })} onEditTeam={(team) => setModal({ kind: "supportTeam", team })} onNewWeek={() => setModal({ kind: "supportWeek" })} onEditWeek={(week) => setModal({ kind: "supportWeek", week })} onGenerate={() => setModal({ kind: "generateWeeks" })} onScheduleChanged={() => void load(true)} /> :tab === "planning" ? <PlanningView items={items} loading={loading} shopping={shopping} upcoming={upcomingStock} coverDays={coverDays} onCoverDays={setCoverDays} today={stockToday} onTrip={permissions.registerPurchases ? () => setTrip(true) : undefined} /> : tab === "requests" ? <CopaRequestsView stockTeamId={stockTeamId} items={items} onStockChanged={() => void load(true)} /> : tab === "maintenance" ? <MaintenanceView /> : tab === "reports" ? <ReportsView stockTeamId={stockTeamId} /> : tab === "tasks" ? <TasksView openRequest={taskToOpen} onOpenRequestHandled={clearTaskToOpen} createRequest={newTaskRequest} onCreateRequestHandled={clearNewTaskRequest} /> : tab === "people" ? <PeopleView key={`${personSearch}-${subTab.key}`} initialSearch={personSearch} initialTab={subTab.people} /> : tab === "projects" ? <ProjectsView onOpenTask={openTask} openRequest={projectToOpen} onOpenRequestHandled={clearProjectToOpen} /> : tab === "panel" ? <LeadershipView onOpenTask={openTask} onOpenProjects={() => setTab("projects")} /> : tab === "tickets" ? <TicketsView openRequest={ticketToOpen} onOpenRequestHandled={clearTicketToOpen} createRequest={newTicketRequest} onCreateRequestHandled={clearNewTicketRequest} onOpenTask={openTask} onOpenArticle={(articleId) => openKnowledge({ articleId })} onSaveSolution={(draft) => openKnowledge({ draft })} /> : tab === "clients" ? <ClientsArea key={subTab.key} initialTab={subTab.clients} onOpenTask={openTask} onOpenTicket={openTicket} /> : tab === "sprints" ? <SprintsView onOpenTask={openTask} /> : tab === "reviews" ? <ReviewsView key={reviewsTab.key} initialTab={reviewsTab.tab} /> : tab === "community" ? <CommunityView key={communityTab.key} openChannel={communityTab.channel} /> : tab === "agenda" ? <AgendaView openRequest={eventToOpen} onOpenRequestHandled={clearEventToOpen} /> : tab === "calendar" ? <CalendarView schedule={schedule} onOpenTask={openTask} onOpenEvent={openAgenda} onOpenProject={(id) => { setTab("projects"); setProjectToOpen(id); }} /> : tab === "admin" && isAdmin ? <AdminView /> : tab === "knowledge" ? <KnowledgeView openRequest={articleToOpen} draft={articleDraft} onRequestHandled={clearArticleRequest} onOpenTicket={openTicket} /> :tab === "team" ? <TeamView members={members} currentUser={currentUser} saving={saving} onAddMember={() => setModal({ kind: "member" })} onEditMember={(member) => setModal({ kind: "member", member })} onDeleteMember={deleteMember} onUpdateRole={(userId, role) => submit({ action: "updateMemberRole", userId, role }, "Permissão atualizada.")} onUpdateActive={(userId, active) => submit({ action: "updateMemberActive", userId, active }, active ? "Acesso reativado." : "Acesso desativado.")} /> : tab === "help" ? <HelpView /> : <HistoryView movements={movements} loading={loading} />}
+          ) : tab === "schedule" ? <ScheduleView schedule={schedule} loading={loading} canEdit={permissions.manageSchedule} onNewTeam={() => setModal({ kind: "supportTeam" })} onEditTeam={(team) => setModal({ kind: "supportTeam", team })} onNewWeek={() => setModal({ kind: "supportWeek" })} onEditWeek={(week) => setModal({ kind: "supportWeek", week })} onGenerate={() => setModal({ kind: "generateWeeks" })} onScheduleChanged={() => void load(true)} /> :tab === "planning" ? <PlanningView items={items} loading={loading} shopping={shopping} upcoming={upcomingStock} coverDays={coverDays} onCoverDays={setCoverDays} today={stockToday} onTrip={permissions.registerPurchases ? () => setTrip(true) : undefined} /> : tab === "requests" ? <CopaRequestsView stockTeamId={stockTeamId} items={items} onStockChanged={() => void load(true)} /> : tab === "maintenance" ? <MaintenanceView /> : tab === "reports" ? <ReportsView stockTeamId={stockTeamId} /> : tab === "tasks" ? <TasksView openRequest={taskToOpen} onOpenRequestHandled={clearTaskToOpen} createRequest={newTaskRequest} onCreateRequestHandled={clearNewTaskRequest} /> : tab === "people" ? <PeopleView key={`${personSearch}-${subTab.key}`} initialSearch={personSearch} initialTab={subTab.people} /> : tab === "projects" ? <ProjectsView onOpenTask={openTask} openRequest={projectToOpen} onOpenRequestHandled={clearProjectToOpen} /> : tab === "panel" ? <LeadershipView onOpenTask={openTask} onOpenProjects={() => setTab("projects")} /> : tab === "tickets" ? <TicketsView openRequest={ticketToOpen} onOpenRequestHandled={clearTicketToOpen} createRequest={newTicketRequest} onCreateRequestHandled={clearNewTicketRequest} onOpenTask={openTask} onOpenArticle={(articleId) => openKnowledge({ articleId })} onSaveSolution={(draft) => openKnowledge({ draft })} /> : tab === "clients" ? <ClientsArea key={subTab.key} initialTab={subTab.clients} onOpenTask={openTask} onOpenTicket={openTicket} /> : tab === "sprints" ? <SprintsView onOpenTask={openTask} /> : tab === "reviews" ? <ReviewsView key={reviewsTab.key} initialTab={reviewsTab.tab} /> : tab === "community" ? <CommunityView key={communityTab.key} openChannel={communityTab.channel} /> : tab === "agenda" ? <AgendaView openRequest={eventToOpen} onOpenRequestHandled={clearEventToOpen} /> : tab === "calendar" ? <CalendarView schedule={schedule} onOpenTask={openTask} onOpenEvent={openAgenda} onOpenProject={(id) => { setTab("projects"); setProjectToOpen(id); }} /> : tab === "admin" && isAdmin ? <AdminView /> : tab === "knowledge" ? <KnowledgeView openRequest={articleToOpen} draft={articleDraft} onRequestHandled={clearArticleRequest} onOpenTicket={openTicket} /> :tab === "team" ? <TeamView members={members} currentUser={currentUser} saving={saving} onAddMember={() => setModal({ kind: "member" })} onEditMember={(member) => setModal({ kind: "member", member })} onDeleteMember={deleteMember} onUpdateRole={(userId, role) => submit({ action: "updateMemberRole", userId, role }, "Permissão atualizada.")} onUpdateActive={(userId, active) => submit({ action: "updateMemberActive", userId, active }, active ? "Acesso reativado." : "Acesso desativado.")} /> : tab === "help" ? <HelpView /> : tab === "portalReports" ? <PortalReportsView screen={reportScreen} /> : <HistoryView movements={movements} loading={loading} />}
         </section>
       </main>
       {chatPanel && tab !== "community" && <ChatPanel onClose={() => setChatPanel(false)} onOpenFull={(channel) => { setChatPanel(false); go("community"); setCommunityTab((current) => ({ key: current.key + 1, channel })); }} />}

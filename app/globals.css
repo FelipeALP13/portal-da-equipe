@@ -2804,6 +2804,9 @@ a.secondary-button { display: inline-flex; align-items: center; gap: 6px; text-d
 .asset-people-picker legend { padding: 0 4px; color: var(--text-secondary); font-size: var(--fs-sm); font-weight: 600; }
 .asset-people-picker label { display: inline-flex; flex-direction: row; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border: 1px solid var(--border-subtle); border-radius: 15px; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
 .asset-people-picker label.on { border-color: var(--brand-border); background: var(--brand-soft); }
+/* A caixinha herdava o tamanho dos campos do formulário (quadrado grande que espremia os nomes). */
+.asset-people-picker label { white-space: nowrap; }
+.form-grid .asset-people-picker input[type="checkbox"], .asset-people-picker input[type="checkbox"] { flex: none; width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; accent-color: var(--brand); }
 .asset-people-picker select { width: 100%; height: 36px; }
 .asset-history, .incident-timeline { margin: 0 25px 14px; }
 .asset-history > small, .incident-timeline > small { display: block; margin-bottom: 6px; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
@@ -4021,9 +4024,9 @@ html[data-theme="dark"] .community {
 .standup-toggle { display: inline-flex; align-items: center; justify-self: start; gap: 4px; padding: 4px 0; border: 0; color: var(--brand-text); background: none; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
 .standup-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
 .standup-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
-.standup-list li { display: grid; gap: 6px; padding: 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface-alt); }
+.standup-list li { display: grid; align-content: start; gap: 6px; padding: 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface-alt); }
 .standup-list strong { color: var(--text); font-size: var(--fs-sm); }
-.standup-list p { display: grid; gap: 1px; margin: 0; color: var(--text-secondary); font-size: var(--fs-sm); white-space: pre-wrap; }
+.standup-list p { display: grid; align-content: start; gap: 1px; margin: 0; color: var(--text-secondary); font-size: var(--fs-sm); white-space: pre-wrap; }
 .standup-list p span { color: var(--text-muted); font-size: var(--fs-2xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .standup-list p.blocker { color: var(--danger-text); }
 .standup-missing { margin: 0; color: var(--text-muted); font-size: var(--fs-xs); }
@@ -4699,3 +4702,69 @@ select option:disabled { color: var(--text-muted); }
 .bell-text em { -webkit-line-clamp: 3; }
 
 .client-head-actions { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+/* Topo padronizado: todos os botões e o selo do perfil com a mesma altura (38 px, a do sino). No celular valem os tamanhos maiores de toque. */
+@media (min-width: 761px) {
+  .topbar-actions .data-tools-button, .topbar-actions .create-menu-button, .topbar-actions .topbar-search, .topbar-actions .chat-panel-button, .topbar-actions .bell-button, .topbar-actions .role-chip { height: 38px; min-height: 38px; }
+  .topbar-actions .chat-panel-button, .topbar-actions .bell-button { width: 38px; }
+}
+
+/* Gaveta da demanda: mais larga e as propriedades em linhas (nome à esquerda, valor à direita), como uma ficha,
+   para ler de relance. Campos largos (prioridade, período) e pessoas ficam com o nome em cima. */
+@media (min-width: 901px) {
+  .task-drawer { width: min(1080px, 100%); }
+  .task-drawer-body { grid-template-columns: minmax(0, 1fr) 390px; }
+  .task-drawer-side { gap: 0; padding: 10px 20px 22px; }
+  .task-drawer-side .task-fields { gap: 0; }
+  .task-drawer-side .task-fields > *, .task-drawer-side .task-due-field { padding: 9px 0; border-bottom: 1px solid var(--border-subtle); }
+  .task-drawer-side .task-due-field { display: grid; gap: 8px; }
+  .task-drawer-side .task-due-field > .task-prop { padding: 0; border: 0; }
+  .task-drawer-side .task-fields > .task-prop:not(.task-prop-wide), .task-drawer-side .task-due-field > .task-prop, .task-drawer-side .task-hours > .task-prop { display: grid; grid-template-columns: 124px minmax(0, 1fr); align-items: center; gap: 10px; }
+  .task-drawer-side .task-hours { display: grid; gap: 8px; }
+  .task-drawer-side .task-prop > span:first-child, .task-drawer-side .people-picker-label { color: var(--text-secondary); font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0; text-transform: none; white-space: nowrap; }
+  .task-drawer-side .due-shortcuts { padding-left: 134px; }
+  .task-drawer-side .task-side-note { margin-top: 12px; }
+}
+
+/* Problemas do Portal: relatos de erro e sugestões da equipe (mesmo visual dos pedidos da Copa). */
+.portal-reports { display: grid; gap: 16px; }
+.portal-reports-intro { display: flex; align-items: flex-start; gap: 12px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius-xl); background: var(--surface); }
+.portal-reports-intro > div { flex: 1; min-width: 0; }
+.portal-reports-intro h2 { margin: 2px 0 4px; font-size: var(--fs-xl); letter-spacing: -.02em; }
+.portal-reports-intro p { margin: 0; color: var(--text-muted); font-size: var(--fs-base); line-height: 1.5; }
+.portal-reports-intro .primary-button { display: inline-flex; flex: none; align-items: center; gap: 6px; }
+.portal-reports-tabs { display: flex; gap: 2px; justify-self: start; padding: 3px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-sunken); }
+.portal-reports-tabs button { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); color: var(--text-tertiary); background: transparent; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
+.portal-reports-tabs button.active { color: var(--text); background: var(--surface); box-shadow: var(--shadow-sm); }
+.portal-reports-tabs b { min-width: 18px; padding: 0 5px; border-radius: 9px; color: white; background: var(--brand); font-size: var(--fs-2xs); line-height: 18px; text-align: center; }
+.portal-reports-empty { margin: 0; padding: 28px; border: 1px dashed var(--border); border-radius: var(--radius-lg); color: var(--text-muted); text-align: center; }
+.portal-reports-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.portal-report { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+.portal-report.done, .portal-report.declined { background: var(--surface-alt); }
+.portal-report-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.portal-report-head strong { flex: 1; min-width: 180px; color: var(--text); font-size: var(--fs-base); }
+.portal-report-kind { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: var(--radius-pill); font-size: var(--fs-xs); font-weight: 700; }
+.portal-report-kind.bug { color: var(--danger-text); background: var(--danger-soft); }
+.portal-report-kind.idea { color: var(--warning-text); background: var(--warning-soft); }
+.portal-report-status { padding: 2px 9px; border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text-secondary); font-size: var(--fs-xs); font-weight: 700; }
+.portal-report-status.doing { border-color: var(--brand-border); color: var(--brand-text); background: var(--brand-soft); }
+.portal-report-status.done { border-color: color-mix(in srgb, var(--success-solid) 35%, transparent); color: var(--success-text); background: var(--success-soft); }
+.portal-report-details { margin: 0; color: var(--text-secondary); font-size: var(--fs-sm); line-height: 1.5; white-space: pre-wrap; }
+.portal-report-image { justify-self: start; }
+.portal-report-image img { display: block; max-width: min(360px, 100%); max-height: 200px; border: 1px solid var(--border); border-radius: var(--radius); object-fit: contain; }
+.portal-report-meta { color: var(--text-muted); font-size: var(--fs-xs); }
+.portal-report-response { margin: 0; padding: 8px 10px; border-left: 3px solid var(--brand); border-radius: var(--radius-sm); color: var(--text-secondary); background: var(--brand-soft); font-size: var(--fs-sm); white-space: pre-wrap; }
+.portal-report-manage { display: grid; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border-subtle); }
+.portal-report-manage textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); background: var(--surface); font: inherit; font-size: var(--fs-sm); resize: vertical; }
+.portal-report-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.portal-report-actions button { display: inline-flex; align-items: center; gap: 6px; }
+.portal-report-attach { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.portal-report-attach > label.secondary-button { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.portal-report-attach small { color: var(--text-muted); font-size: var(--fs-xs); }
+.portal-report-thumb { position: relative; display: inline-block; }
+.portal-report-thumb img { display: block; max-width: 220px; max-height: 120px; border: 1px solid var(--border); border-radius: var(--radius); }
+.portal-report-thumb button { position: absolute; top: 4px; right: 4px; display: grid; width: 24px; height: 24px; place-items: center; padding: 0; border: 0; border-radius: 50%; color: white; background: rgba(15,23,42,.7); cursor: pointer; }
+@media (max-width: 760px) {
+  .portal-reports-intro { flex-wrap: wrap; }
+  .portal-reports-intro .primary-button { width: 100%; justify-content: center; }
+}

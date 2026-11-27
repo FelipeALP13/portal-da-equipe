@@ -5,7 +5,8 @@
 import { useEffect, useRef } from "react";
 
 export const LIVE_EVENT = "portal-live";
-const INTERVAL_MS = 8000;
+// 20 s: cada consulta conta no limite diário da Cloudflare (com a equipe toda logada, somam muito)
+const INTERVAL_MS = 20000;
 
 /** Fica no painel principal: vigia a versão e dispara o aviso para as telas. */
 export function useLiveSync(enabled: boolean) {

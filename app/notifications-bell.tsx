@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLiveRefresh } from "./live";
 import { createPortal } from "react-dom";
 import AtSign from "lucide-react/icons/at-sign";
+import Bug from "lucide-react/icons/bug";
 import Bell from "lucide-react/icons/bell";
 import CalendarDays from "lucide-react/icons/calendar";
 import CalendarClock from "lucide-react/icons/calendar-clock";
@@ -48,6 +49,21 @@ import { canAskDesktop, desktopNotify, isMuted, NOTIFY_REFRESH_EVENT, playChime,
 
 type Item = { id: number; kind: NotificationKind; taskId: number | null; taskTitle: string | null; ticketId: number | null; ticketTitle: string | null; eventId: number | null; eventTitle: string | null; actorName: string; body: string; readAt: string | null; createdAt: string };
 type DueTask = { id: number; title: string; dueDate: string };
+
+/**
+ * Prazos já vistos hoje (ao abrir o sino): deixam de contar no número, mas continuam na lista.
+ * Guardado neste navegador como "dia|id,id"; no dia seguinte, os prazos voltam a contar.
+ */
+const DUE_SEEN_KEY = "portal.bell.dueSeen";
+function readDueSeen(day: string): number[] {
+  try {
+    const [stored, ids] = (window.localStorage.getItem(DUE_SEEN_KEY) ?? "").split("|");
+    return stored === day && ids ? ids.split(",").map(Number) : [];
+  } catch { return []; }
+}
+function saveDueSeen(day: string, ids: number[]) {
+  try { window.localStorage.setItem(DUE_SEEN_KEY, `${day}|${ids.join(",")}`); } catch { /* sem armazenamento */ }
+}
 type Data = { items: Item[]; unread: number; due: DueTask[] };
 
 /** Filtros do painel de avisos. */
@@ -62,7 +78,7 @@ const FILTERS: { value: Filter; label: string; match: (item: Item) => boolean }[
 const FILTER_EMPTY: Record<Filter, string> = { all: "", unread: "Tudo lido por aqui.", mentions: "Ninguém te mencionou nos últimos avisos.", work: "Nenhum aviso de demanda ou chamado.", chat: "Nenhum aviso do chat." };
 
 
-const kindIcon = { task_assigned: UserPlus, task_comment: MessageSquare, task_mention: AtSign, task_status: CircleDot, ticket_new: LifeBuoy, ticket_assigned: UserPlus, ticket_comment: MessageSquare, ticket_mention: AtSign, ticket_status: CircleDot, ticket_late: AlarmClock, agenda_reminder: CalendarClock, agenda_invite: CalendarPlus, ticket_rate: Star, task_unblocked: Unlock, handoff: Repeat, celebration: PartyPopper, system_down: ServerCrash, system_up: ServerCog, onboarding: Sprout, review_open: ClipboardCheck, review_reminder: ClipboardCheck, goal_update: Target, one_on_one: Handshake, dev_action: Handshake, pulse_open: Smile, announcement: Megaphone, incident: Siren, asset_expiring: Laptop, chat_mention: MessagesSquare, chat_message: MessageSquare, chat_reminder: AlarmClock, stock_low: PackageMinus, copa_request: HandPlatter, kudos: Award, poll: Vote, maintenance: Wrench, security_alert: ShieldAlert, absence_request: CalendarOff, absence_decision: CalendarOff, shift_swap: ArrowLeftRight, standup_blocker: OctagonAlert } as const;
+const kindIcon = { task_assigned: UserPlus, task_comment: MessageSquare, task_mention: AtSign, task_status: CircleDot, ticket_new: LifeBuoy, ticket_assigned: UserPlus, ticket_comment: MessageSquare, ticket_mention: AtSign, ticket_status: CircleDot, ticket_late: AlarmClock, agenda_reminder: CalendarClock, agenda_invite: CalendarPlus, ticket_rate: Star, task_unblocked: Unlock, handoff: Repeat, celebration: PartyPopper, system_down: ServerCrash, system_up: ServerCog, onboarding: Sprout, review_open: ClipboardCheck, review_reminder: ClipboardCheck, goal_update: Target, one_on_one: Handshake, dev_action: Handshake, pulse_open: Smile, announcement: Megaphone, incident: Siren, asset_expiring: Laptop, chat_mention: MessagesSquare, chat_message: MessageSquare, chat_reminder: AlarmClock, stock_low: PackageMinus, copa_request: HandPlatter, portal_report: Bug, kudos: Award, poll: Vote, maintenance: Wrench, security_alert: ShieldAlert, absence_request: CalendarOff, absence_decision: CalendarOff, shift_swap: ArrowLeftRight, standup_blocker: OctagonAlert } as const;
 
 function subject(item: Item) {
   if (item.ticketId) return `${ticketCode(item.ticketId)} · ${item.ticketTitle ?? "Chamado"}`;
@@ -83,6 +99,7 @@ function subject(item: Item) {
   if (item.kind === "chat_mention" || item.kind === "chat_message" || item.kind === "chat_reminder") return "Chat";
   if (item.kind === "stock_low") return "Estoque da Copa";
   if (item.kind === "copa_request") return "Pedidos da Copa";
+  if (item.kind === "portal_report") return "Problemas do Portal";
   if (item.kind === "kudos") return "Elogios";
   if (item.kind === "poll") return "Enquete";
   if (item.kind === "maintenance") return "Manutenção do escritório";
@@ -103,8 +120,16 @@ async function post(payload: Record<string, unknown>) {
   await fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
 }
 
-export default function NotificationsBell({ onOpenTask, onOpenTicket, onOpenEvent, onOpenView }: { onOpenTask: (taskId: number) => void; onOpenTicket: (ticketId: number) => void; onOpenEvent: (eventId: number) => void; onOpenView: (view: "schedule" | "hub" | "clients" | "people" | "reviews" | "one_on_ones" | "pulse" | "incidents" | "assets" | "chat" | "stock" | "requests" | "maintenance" | "admin" | "absences") => void }) {
+export default function NotificationsBell({ onOpenTask, onOpenTicket, onOpenEvent, onOpenView }: { onOpenTask: (taskId: number) => void; onOpenTicket: (ticketId: number) => void; onOpenEvent: (eventId: number) => void; onOpenView: (view: "schedule" | "hub" | "clients" | "people" | "reviews" | "one_on_ones" | "pulse" | "incidents" | "assets" | "chat" | "stock" | "requests" | "maintenance" | "admin" | "absences" | "portalReports") => void }) {
   const [data, setData] = useState<Data>({ items: [], unread: 0, due: [] });
+  const [dueSeen, setDueSeen] = useState<number[]>([]);
+  useEffect(() => { const timer = window.setTimeout(() => setDueSeen(readDueSeen(today())), 0); return () => window.clearTimeout(timer); }, []);
+  /** Abriu o sino: os prazos de hoje já foram vistos (saem do número, ficam na lista). */
+  function seeDue() {
+    const ids = [...new Set([...readDueSeen(today()), ...data.due.map((task) => task.id)])];
+    saveDueSeen(today(), ids);
+    setDueSeen(ids);
+  }
   const [open, setOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
   const [askDesktop, setAskDesktop] = useState(false);
@@ -141,8 +166,13 @@ export default function NotificationsBell({ onOpenTask, onOpenTicket, onOpenEven
     const release = unlockSoundOnInteraction();
     const first = window.setTimeout(() => { void load(); }, 0);
     const refresh = () => { if (document.visibilityState === "visible") void load(); };
-    // Com a aba escondida o navegador desacelera os timers; ainda assim busca, para o som/aviso do sistema.
-    const interval = window.setInterval(() => { void load(); }, 20000);
+    // A cada 60 s com a aba visível; escondida, a cada 3 min (ainda avisa com som/aviso do sistema).
+    // Cada consulta conta no limite diário da Cloudflare.
+    let lastHidden = 0;
+    const interval = window.setInterval(() => {
+      if (document.visibilityState !== "visible") { if (Date.now() - lastHidden < 180000) return; lastHidden = Date.now(); }
+      void load();
+    }, 60000);
     const onRefresh = () => { void load(); };
     window.addEventListener("focus", refresh);
     window.addEventListener(NOTIFY_REFRESH_EVENT, onRefresh);
@@ -181,6 +211,7 @@ export default function NotificationsBell({ onOpenTask, onOpenTicket, onOpenEven
     else if (item.kind === "chat_mention" || item.kind === "chat_message" || item.kind === "chat_reminder") onOpenView("chat");
     else if (item.kind === "stock_low") onOpenView("stock");
     else if (item.kind === "copa_request") onOpenView("requests");
+    else if (item.kind === "portal_report") onOpenView("portalReports");
     else if (item.kind === "kudos") onOpenView("hub");
     else if (item.kind === "poll") onOpenView(item.body.startsWith("#") ? "chat" : "hub");
     else if (item.kind === "maintenance") onOpenView("maintenance");
@@ -191,6 +222,7 @@ export default function NotificationsBell({ onOpenTask, onOpenTicket, onOpenEven
   }
 
   async function markAll() {
+    seeDue();
     setData((current) => ({ ...current, unread: 0, items: current.items.map((item) => ({ ...item, readAt: item.readAt ?? new Date().toISOString() })) }));
     await post({ action: "markAllRead" });
   }
@@ -207,14 +239,15 @@ export default function NotificationsBell({ onOpenTask, onOpenTicket, onOpenEven
     setAskDesktop(canAskDesktop());
   }
 
-  const badge = data.unread + data.due.length;
+  const newDue = data.due.filter((task) => !dueSeen.includes(task.id));
+  const badge = data.unread + newDue.length;
   const activeFilter = FILTERS.find((entry) => entry.value === filter) ?? FILTERS[0];
   const shown = data.items.filter(activeFilter.match);
   const showDue = data.due.length > 0 && (filter === "all" || filter === "work" || filter === "unread");
   const now = today();
 
   return <div className="bell" ref={root}>
-    <button className={`bell-button ${open ? "open" : ""}`} onClick={() => { setOpen((value) => !value); if (!open) void load(); }} aria-label={badge ? `Avisos: ${data.unread} não lidos, ${data.due.length} prazos` : "Avisos"} aria-expanded={open}>
+    <button className={`bell-button ${open ? "open" : ""}`} onClick={() => { setOpen((value) => !value); if (!open) { void load(); seeDue(); } }} aria-label={badge ? `Avisos: ${data.unread} não lidos, ${newDue.length} prazos` : "Avisos"} aria-expanded={open}>
       <Bell size={18} />
       {badge > 0 && <b>{badge > 9 ? "9+" : badge}</b>}
     </button>
