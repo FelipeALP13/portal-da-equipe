@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLiveRefresh } from "./live";
+import { useLiveRefresh, isActive } from "./live";
 import BellRing from "lucide-react/icons/bell-ring";
 import Check from "lucide-react/icons/check";
 import HandPlatter from "lucide-react/icons/hand-platter";
@@ -53,14 +53,14 @@ export function CopaRequestsView({ stockTeamId = null, items, onStockChanged }: 
       setError(err instanceof Error ? err.message : "Não foi possível carregar os pedidos.");
     }
   }, [stockTeamId]);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["copa", "inventory"]);
   // "+ Criar" > Pedido da copa: leva o cursor direto para o campo do pedido.
   const askInput = useRef<HTMLInputElement>(null);
   useCreateRequest("copa", () => window.requestAnimationFrame(() => { askInput.current?.focus(); askInput.current?.scrollIntoView({ block: "center" }); }));
 
   useEffect(() => {
     const first = window.setTimeout(() => { void load(); }, 0);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60000);
+    const interval = window.setInterval(() => { if (isActive()) void load(); }, 60000);
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
   }, [load]);
 

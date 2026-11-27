@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { atOccurrence, occurrences, reminderTimes } from "./agenda";
+import { isActive } from "./live";
 import { NOTIFY_REFRESH_EVENT } from "./notify-sound";
 
 export type AgendaEvent = {
@@ -53,7 +54,7 @@ export function useUpcomingAgenda(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
     const first = window.setTimeout(() => { void load(); }, 0);
-    const interval = window.setInterval(() => { void load(); }, 5 * 60000);
+    const interval = window.setInterval(() => { if (isActive()) void load(); }, 5 * 60000);
     const stop = onAgendaChanged(() => { void load(); });
     return () => { window.clearTimeout(first); window.clearInterval(interval); stop(); };
   }, [enabled, load]);

@@ -34,7 +34,7 @@ export function StandupCard() {
       setData(next);
     } catch { /* a daily é opcional: sem ela, a Visão geral continua */ }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["standups"]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   function startEditing() {

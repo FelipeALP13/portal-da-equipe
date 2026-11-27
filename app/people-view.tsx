@@ -73,7 +73,7 @@ export default function PeopleView({ initialSearch = "", initialTab = "people" }
       setError(err instanceof Error ? err.message : "Não foi possível carregar as pessoas.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["people", "wall", "absences", "inventory", "assets"]);
 
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 

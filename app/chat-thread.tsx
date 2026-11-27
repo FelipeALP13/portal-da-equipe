@@ -42,6 +42,7 @@ import { Avatar, MentionTextarea } from "./task-shared";
 import { askConfirm } from "./confirm-dialog";
 import ImageIcon from "lucide-react/icons/image";
 import { wallpaperStyle } from "./chat-wallpaper";
+import { isActive } from "./live";
 import { ChatWallpaperPicker, useChatWallpaper } from "./chat-wallpaper-picker";
 
 export type Status = PersonStatus & { untilLabel: string | null };
@@ -537,7 +538,7 @@ export function Thread({ topicId, people, me, compact, onChanged, onBack, onOpen
     let tick = 0;
     const first = window.setTimeout(() => { void load(); }, 0);
     const interval = window.setInterval(() => {
-      if (document.visibilityState !== "visible") return;
+      if (!isActive()) return;
       tick = (tick + 1) % FULL_EVERY;
       void sync(tick === 0);
     }, 8000);

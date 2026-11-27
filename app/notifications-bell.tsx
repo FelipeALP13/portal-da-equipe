@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLiveRefresh } from "./live";
+import { useLiveRefresh, isActive } from "./live";
 import { createPortal } from "react-dom";
 import AtSign from "lucide-react/icons/at-sign";
 import Bug from "lucide-react/icons/bug";
@@ -170,7 +170,7 @@ export default function NotificationsBell({ onOpenTask, onOpenTicket, onOpenEven
     // Cada consulta conta no limite diário da Cloudflare.
     let lastHidden = 0;
     const interval = window.setInterval(() => {
-      if (document.visibilityState !== "visible") { if (Date.now() - lastHidden < 180000) return; lastHidden = Date.now(); }
+      if (!isActive()) { if (Date.now() - lastHidden < 180000) return; lastHidden = Date.now(); }
       void load();
     }, 60000);
     const onRefresh = () => { void load(); };

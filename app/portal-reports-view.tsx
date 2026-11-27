@@ -46,7 +46,7 @@ export default function PortalReportsView({ screen }: { screen: string }) {
     }
   }, []);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["portal-reports"]);
   useCreateRequest("report", () => setCreating(true));
 
   const open = data?.reports.filter((report) => isOpenReport(report.status)) ?? [];

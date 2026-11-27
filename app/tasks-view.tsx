@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLiveRefresh } from "./live";
+import { useLiveRefresh, isActive } from "./live";
 import Building2 from "lucide-react/icons/building-2";
 import ChevronDown from "lucide-react/icons/chevron-down";
 import CalendarDays from "lucide-react/icons/calendar-days";
@@ -67,11 +67,11 @@ export default function TasksView({ openRequest = null, onOpenRequestHandled, cr
       setError(err instanceof Error ? err.message : "Não foi possível carregar as demandas.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["tasks", "time-entries", "templates", "sprints", "projects", "import"]);
 
   useEffect(() => {
     const first = window.setTimeout(() => { setView(readView()); void load(); }, 0);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible" && !busy.current) void load(); }, 60000);
+    const interval = window.setInterval(() => { if (isActive() && !busy.current) void load(); }, 60000);
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
   }, [load]);
 

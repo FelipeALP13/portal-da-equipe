@@ -41,7 +41,7 @@ export default function NoticeBoard() {
       setData({ notices: [], me: { id: 0, canPost: false } });
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["announcements"]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   async function act(payload: Record<string, unknown>) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { useLiveRefresh } from "./live";
+import { useLiveRefresh, isActive } from "./live";
 import CircleCheck from "lucide-react/icons/circle-check";
 import Hand from "lucide-react/icons/hand";
 import LifeBuoy from "lucide-react/icons/life-buoy";
@@ -117,6 +117,9 @@ function SlaBadge({ ticket }: { ticket: Ticket }) {
   return <span className={`sla-badge ${sla.state}`} title="Prazo de primeira resposta"><Timer size={11} />{text}</span>;
 }
 
+/** Áreas da API que esta tela mostra: só recarrega quando uma delas muda. */
+const LIVE_AREAS = ["tickets", "knowledge", "clients", "integrations", "jira"];
+
 export default function TicketsView({ openRequest = null, onOpenRequestHandled, onOpenTask, onOpenArticle, onSaveSolution, createRequest = 0, onCreateRequestHandled }: { openRequest?: number | null; onOpenRequestHandled?: () => void; onCreateRequestHandled?: () => void; onOpenTask: (taskId: number) => void; onOpenArticle: (articleId: number) => void; onSaveSolution: (draft: ArticleDraft) => void; createRequest?: number }) {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
@@ -147,11 +150,11 @@ export default function TicketsView({ openRequest = null, onOpenRequestHandled, 
       setError(err instanceof Error ? err.message : "Não foi possível carregar os chamados.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, LIVE_AREAS);
 
   useEffect(() => {
     const first = window.setTimeout(() => { void load(); }, 0);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60000);
+    const interval = window.setInterval(() => { if (isActive()) void load(); }, 60000);
     // Chamados novos do Jira: recarrega na hora.
     const onJira = () => { void load(); };
     window.addEventListener(TICKETS_CHANGED, onJira);
@@ -444,7 +447,7 @@ function TicketDrawer({ ticket, data, onOpenTicket, onManageReplies, onClose, on
     const json = await response.json() as { events?: TicketEvent[]; error?: string };
     if (response.ok && json.events) setEvents(json.events); else setError(json.error || "Não foi possível carregar a atividade.");
   }, [ticket.id]);
-  useLiveRefresh(loadEvents);
+  useLiveRefresh(loadEvents, LIVE_AREAS);
 
   useEffect(() => { const timer = window.setTimeout(() => { void loadEvents(); }, 0); return () => window.clearTimeout(timer); }, [loadEvents, ticket.updatedAt]);
   useEffect(() => {

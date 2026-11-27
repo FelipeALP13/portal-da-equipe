@@ -46,7 +46,7 @@ export default function AssetsView() {
       setError(err instanceof Error ? err.message : "Não foi possível carregar.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["assets", "people", "inventory"]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
   const today = todayIso();
   const list = useMemo(() => {

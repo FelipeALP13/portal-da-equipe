@@ -48,7 +48,7 @@ export default function OneOnOnesView() {
       setError(err instanceof Error ? err.message : "Não foi possível carregar.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["one-on-ones", "reviews", "goals"]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   if (!data) return error ? <div className="alert error"><span>{error}</span></div> : <div className="loading-list"><span /><span /></div>;

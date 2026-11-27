@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useLiveRefresh } from "./live";
+import { useLiveRefresh, isActive } from "./live";
 import Archive from "lucide-react/icons/archive";
 import ArchiveRestore from "lucide-react/icons/archive-restore";
 import MessagesSquare from "lucide-react/icons/messages-square";
@@ -33,7 +33,7 @@ export function useConversations() {
   useLiveRefresh(load);
   useEffect(() => {
     const first = window.setTimeout(() => { void load(); }, 0);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 30000);
+    const interval = window.setInterval(() => { if (isActive()) void load(); }, 30000);
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
   }, [load]);
   return { list, error, setError, load };

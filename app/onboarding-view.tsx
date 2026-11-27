@@ -34,7 +34,7 @@ export function useOnboardings(enabled = true) {
       setError(err instanceof Error ? err.message : "Não foi possível carregar.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["onboarding", "people"]);
   useEffect(() => { if (!enabled) return; const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load, enabled]);
   return { data, error, load };
 }

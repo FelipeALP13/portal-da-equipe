@@ -46,7 +46,7 @@ export default function HandoffPanel() {
       setError(err instanceof Error ? err.message : "Não foi possível carregar a passagem de plantão.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["handoffs", "tickets"]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   async function run(action: () => Promise<void>) {

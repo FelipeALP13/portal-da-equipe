@@ -66,7 +66,7 @@ export default function AgendaView({ openRequest, onOpenRequestHandled }: { open
       setError(err instanceof Error ? err.message : "Não foi possível carregar a agenda.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["agenda"]);
   useCreateRequest("agenda", () => setEditing("new"));
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 

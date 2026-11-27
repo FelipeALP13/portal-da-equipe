@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { useLiveRefresh } from "./live";
+import { useLiveRefresh, isActive } from "./live";
 import ChevronDown from "lucide-react/icons/chevron-down";
 import { TICKETS_CHANGED } from "./use-jira-sync";
 import { NOTIFY_REFRESH_EVENT } from "./notify-sound";
@@ -29,12 +29,12 @@ export function useNavCounts(enabled: boolean) {
       if (json.reminded) window.dispatchEvent(new Event(NOTIFY_REFRESH_EVENT));
     } catch { /* sem conexão: mantém os números anteriores */ }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["tasks", "tickets", "copa", "inventory", "absences", "shift-swaps", "portal-reports", "reviews", "pulse", "one-on-ones", "maintenance", "incidents"]);
   useEffect(() => {
     if (!enabled) return;
     const first = window.setTimeout(() => { void load(); }, 800);
     // A cada 15 s: o número de mensagens não lidas do chat aparece logo.
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60000);
+    const interval = window.setInterval(() => { if (isActive()) void load(); }, 60000);
     const refresh = () => { void load(); };
     window.addEventListener(TICKETS_CHANGED, refresh);
     window.addEventListener(CHAT_CHANGED, refresh);

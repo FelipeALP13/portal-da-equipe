@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLiveRefresh } from "./live";
+import { useLiveRefresh, isActive } from "./live";
 import Building2 from "lucide-react/icons/building-2";
 import Copy from "lucide-react/icons/copy";
 import Eye from "lucide-react/icons/eye";
@@ -81,10 +81,10 @@ export default function ClientsView({ onOpenTask, onOpenTicket }: { onOpenTask: 
       setError(err instanceof Error ? err.message : "Não foi possível carregar os clientes.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["clients", "tasks", "time-entries", "incidents", "tickets"]);
   useEffect(() => {
     const first = window.setTimeout(() => { void load(); }, 0);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60000);
+    const interval = window.setInterval(() => { if (isActive()) void load(); }, 60000);
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
   }, [load]);
 
@@ -187,7 +187,7 @@ function ClientDetail({ clientId, onOpenTask, onOpenTicket, onChanged, onRemoved
       setError(err instanceof Error ? err.message : "Não foi possível carregar a ficha.");
     }
   }, [clientId]);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["clients", "tasks", "time-entries", "incidents", "tickets"]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   async function downloadReport() {

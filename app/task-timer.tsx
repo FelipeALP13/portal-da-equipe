@@ -7,6 +7,7 @@ import Timer from "lucide-react/icons/timer";
 import TriangleAlert from "lucide-react/icons/triangle-alert";
 import { taskCode } from "./tasks";
 import { TIMER_SUSPICIOUS_HOURS, timerClock, timerMinutes, timerSuggestion } from "./team-tools";
+import { isActive } from "./live";
 import { askConfirm } from "./confirm-dialog";
 
 export type RunningTimer = { taskId: number; startedAt: string; title: string };
@@ -34,7 +35,7 @@ export function useMyTimer(enabled = true) {
   useEffect(() => {
     if (!enabled) return;
     const first = window.setTimeout(() => { void load(); }, 0);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60000);
+    const interval = window.setInterval(() => { if (isActive()) void load(); }, 60000);
     const onChange = () => { void load(); };
     window.addEventListener(TIMER_CHANGED, onChange);
     window.addEventListener("focus", onChange);

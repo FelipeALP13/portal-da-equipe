@@ -35,7 +35,7 @@ export function ShiftSwaps({ weeks, teams, today, onScheduleChanged }: { weeks: 
       if (response.ok) setData(await response.json() as Data);
     } catch { /* a troca é opcional: sem ela, a escala continua funcionando */ }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["shift-swaps", "inventory"]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   async function act(payload: Record<string, unknown>, changesSchedule = false) {

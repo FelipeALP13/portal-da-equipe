@@ -77,7 +77,7 @@ export default function ProjectsView({ onOpenTask, openRequest = null, onOpenReq
       setError(err instanceof Error ? err.message : "Não foi possível carregar os projetos.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["projects", "tasks"]);
 
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 

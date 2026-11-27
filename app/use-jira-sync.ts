@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { isActive } from "./live";
 
 export const TICKETS_CHANGED = "tickets-changed";
 const INTERVAL_MS = 2 * 60 * 1000;
@@ -29,7 +30,7 @@ export function useJiraAutoSync(enabled: boolean) {
     if (!enabled) return;
     let running = false;
     const run = async () => {
-      if (running || document.visibilityState !== "visible") return;
+      if (running || !isActive()) return;
       running = true;
       try { await requestJiraSync(); } catch { /* sem conexão: tenta na próxima */ } finally { running = false; }
     };

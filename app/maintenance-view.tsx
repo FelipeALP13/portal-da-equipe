@@ -42,7 +42,7 @@ export default function MaintenanceView() {
       setError(err instanceof Error ? err.message : "Não foi possível carregar os pedidos.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["maintenance"]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   const shown = useMemo(() => (data?.requests ?? []).filter((row) => filter === "active" ? isActiveMaintenance(row.status) : filter === "mine" ? row.mine : !isActiveMaintenance(row.status)), [data, filter]);

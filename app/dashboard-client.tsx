@@ -279,7 +279,7 @@ export default function Home() {
   }, [router]);
   // Atualização ao vivo: vigia mudanças da equipe e recarrega as telas abertas.
   useLiveSync(Boolean(currentUser?.active));
-  useLiveRefresh(useCallback(() => load(true), [load]));
+  useLiveRefresh(useCallback(() => load(true), [load]), ["inventory", "copa", "people"]);
 
   useEffect(() => {
     const initialLoad = window.setTimeout(() => { void load(); }, 0);

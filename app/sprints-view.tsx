@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLiveRefresh } from "./live";
+import { useLiveRefresh, isActive } from "./live";
 import CalendarRange from "lucide-react/icons/calendar-range";
 import Check from "lucide-react/icons/check";
 import ListTodo from "lucide-react/icons/list-todo";
@@ -70,7 +70,7 @@ function SprintsTab({ onOpenTask }: { onOpenTask: (taskId: number) => void }) {
       setError(err instanceof Error ? err.message : "Não foi possível carregar os sprints.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["sprints", "retros", "tasks"]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   if (!data) return error ? <div className="alert error"><span>{error}</span></div> : <div className="loading-list"><span /><span /></div>;
@@ -105,7 +105,7 @@ function SprintDetailPanel({ sprintId, sprints, teams, onOpenTask, onEdit, onCha
       setError(err instanceof Error ? err.message : "Não foi possível carregar o sprint.");
     }
   }, [sprintId]);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["sprints", "retros", "tasks"]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   async function run(payload: Record<string, unknown>) {
@@ -259,7 +259,7 @@ function RetrosTab({ onOpenTask }: { onOpenTask: (taskId: number) => void }) {
       setError(err instanceof Error ? err.message : "Não foi possível carregar as retrospectivas.");
     }
   }, []);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["sprints", "retros", "tasks"]);
   useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, [load]);
 
   if (!data) return error ? <div className="alert error"><span>{error}</span></div> : <div className="loading-list"><span /><span /></div>;
@@ -290,11 +290,11 @@ function RetroBoard({ retroId, onOpenTask, onChanged, onDeleted }: { retroId: nu
       setError(err instanceof Error ? err.message : "Não foi possível carregar a retrospectiva.");
     }
   }, [retroId]);
-  useLiveRefresh(load);
+  useLiveRefresh(load, ["sprints", "retros", "tasks"]);
   useEffect(() => {
     const first = window.setTimeout(() => { void load(); }, 0);
     // Durante a reunião, todos veem os itens novos.
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60000);
+    const interval = window.setInterval(() => { if (isActive()) void load(); }, 60000);
     return () => { window.clearTimeout(first); window.clearInterval(interval); };
   }, [load]);
 
