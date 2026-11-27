@@ -9,15 +9,18 @@ import { NEWS } from "./news-source";
 
 type Db = ReturnType<typeof getDb>;
 const KEY = "news_announced";
+/** Já conferido nesta instância do servidor: as próximas aberturas do sino nem tocam no banco. */
+let checkedFor = "";
 
 export async function announceNews(db: Db) {
   const latest = NEWS[0];
-  if (!latest) return 0;
+  if (!latest || checkedFor === latest.date) return 0;
   const now = new Date().toISOString();
   await db.insert(appSettings).values({ key: KEY, value: "", updatedAt: now }).onConflictDoNothing();
   // Só quem conseguir avançar a marca envia (evita aviso repetido quando várias pessoas abrem ao mesmo tempo).
   const [claimed] = await db.update(appSettings).set({ value: latest.date, updatedAt: now })
     .where(and(eq(appSettings.key, KEY), lt(appSettings.value, latest.date))).returning({ key: appSettings.key });
+  checkedFor = latest.date;
   if (!claimed) return 0;
   const people = await db.select({ id: members.id }).from(members).where(eq(members.active, true));
   const body = newsNotice(latest).slice(0, 140);
