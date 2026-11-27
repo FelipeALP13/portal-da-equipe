@@ -1,15 +1,16 @@
 "use client";
 
-// Daily assíncrona na Visão geral: responder em 1 minuto e ver o que o time disse hoje.
+// Daily assíncrona na Visão geral, só na segunda-feira: responder em 1 minuto e ver o que o time disse.
 import { useCallback, useEffect, useState } from "react";
 import { useLiveRefresh } from "./live";
+import { isDailyDay } from "./standup-rules";
 import ChevronDown from "lucide-react/icons/chevron-down";
 import MessageSquareText from "lucide-react/icons/message-square-text";
 import OctagonAlert from "lucide-react/icons/octagon-alert";
 import Pencil from "lucide-react/icons/pencil";
 
 type Entry = { memberId: number; name: string; yesterday: string; today: string; blockers: string; updatedAt: string };
-type Data = { day: string; canWrite: boolean; mine: Entry | null; previousPlan: string; entries: Entry[]; missing: { id: number; name: string }[] };
+type Data = { day: string; isDailyDay?: boolean; canWrite: boolean; mine: Entry | null; previousPlan: string; entries: Entry[]; missing: { id: number; name: string }[] };
 
 const firstName = (name: string) => name.split(/\s+/)[0];
 
@@ -27,6 +28,8 @@ export function StandupCard() {
   const [open, setOpen] = useState(false);
 
   const load = useCallback(async () => {
+    // Daily só na segunda: nos outros dias, nem pergunta ao servidor.
+    if (!isDailyDay(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date()))) { setData(null); return; }
     try {
       const response = await fetch("/api/standups", { cache: "no-store" });
       if (!response.ok) return;
@@ -62,7 +65,7 @@ export function StandupCard() {
     }
   }
 
-  if (!data) return null;
+  if (!data || data.isDailyDay === false) return null;
   const blocked = data.entries.filter((entry) => entry.blockers);
   const answered = data.entries.length;
   const total = answered + data.missing.length;
@@ -71,7 +74,7 @@ export function StandupCard() {
     <header className="standup-head">
       <span className="standup-icon"><MessageSquareText size={18} /></span>
       <div>
-        <h3 id="standup-title">Daily de hoje</h3>
+        <h3 id="standup-title">Daily de segunda</h3>
         <small>{answered} de {total} responderam{blocked.length ? ` · ${blocked.length} com bloqueio` : ""}</small>
       </div>
       {data.canWrite && !editing && (data.mine
@@ -80,8 +83,8 @@ export function StandupCard() {
     </header>
 
     {editing && <form className="standup-form" onSubmit={save}>
-      <label><span>O que fiz ontem</span><textarea rows={2} maxLength={600} value={form.yesterday} onChange={(event) => setForm({ ...form, yesterday: event.target.value })} placeholder="Ex.: fechei o DEM-12 e atendi 3 chamados" /></label>
-      <label><span>O que vou fazer hoje</span><textarea rows={2} maxLength={600} required autoFocus value={form.today} onChange={(event) => setForm({ ...form, today: event.target.value })} placeholder="Ex.: implantação do cliente X e revisar o CH-8" /></label>
+      <label><span>O que fiz na semana passada</span><textarea rows={2} maxLength={600} value={form.yesterday} onChange={(event) => setForm({ ...form, yesterday: event.target.value })} placeholder="Ex.: fechei o DEM-12 e atendi 3 chamados" /></label>
+      <label><span>O que vou fazer esta semana</span><textarea rows={2} maxLength={600} required autoFocus value={form.today} onChange={(event) => setForm({ ...form, today: event.target.value })} placeholder="Ex.: implantação do cliente X e revisar o CH-8" /></label>
       <label><span>Bloqueios (opcional)</span><textarea rows={2} maxLength={600} value={form.blockers} onChange={(event) => setForm({ ...form, blockers: event.target.value })} placeholder="Algo travando? O líder do seu time recebe um aviso." /></label>
       {error && <p className="modal-error">{error}</p>}
       <div className="standup-form-actions"><button type="button" className="secondary-button" onClick={() => setEditing(false)}>Cancelar</button><button className="primary-button" disabled={saving || !form.today.trim()}>{saving ? "Salvando..." : "Enviar"}</button></div>
@@ -93,8 +96,8 @@ export function StandupCard() {
       <button type="button" className="standup-toggle" aria-expanded={open} onClick={() => setOpen((value) => !value)}>{open ? "Esconder as respostas" : `Ver as respostas (${answered})`} <ChevronDown size={14} /></button>
       {open && <ul className="standup-list">{data.entries.map((entry) => <li key={entry.memberId}>
         <strong>{entry.name}</strong>
-        {tidy(entry.yesterday) && <p><span>Ontem</span>{tidy(entry.yesterday)}</p>}
-        <p><span>Hoje</span>{tidy(entry.today)}</p>
+        {tidy(entry.yesterday) && <p><span>Semana passada</span>{tidy(entry.yesterday)}</p>}
+        <p><span>Esta semana</span>{tidy(entry.today)}</p>
         {tidy(entry.blockers) && <p className="blocker"><span>Bloqueio</span>{tidy(entry.blockers)}</p>}
       </li>)}</ul>}
     </>}

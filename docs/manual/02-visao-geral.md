@@ -12,7 +12,7 @@ A **Visão geral** é a página inicial do Portal. Ela junta, numa tela só, o q
 - **Meu trabalho**: as suas demandas em aberto, a fila de chamados do seu time e, se houver, a copa com itens para comprar. Clique para abrir cada lista.
 - **Minha agenda de hoje**: os compromissos do dia, com o botão **Entrar** nas reuniões online. **Anotar compromisso** cria um novo; **Ver agenda** abre a agenda completa.
 - **Mural de avisos**: comunicados da liderança (veja abaixo).
-- **Daily de hoje**: a sua daily assíncrona (veja abaixo).
+- **Daily de segunda**: a daily assíncrona da equipe, só às segundas-feiras (veja abaixo).
 - **Hoje na equipe**: quem está na escala de atendimento esta semana (**Ver escala**).
 - **Ausências**: quem está fora hoje e nos próximos 7 dias (**Ver calendário**).
 - **Comemorações**: aniversários e tempo de casa dos próximos 14 dias.
@@ -53,13 +53,13 @@ Comunicados oficiais (uma regra nova, um recado da diretoria...).
 
 Quem publicou vê quem ainda não leu, pode clicar em **Lembrar quem não leu** (uma vez a cada 12 horas) e pode **Tirar do mural**.
 
-## Daily de hoje
+## Daily de segunda
 
-A daily assíncrona substitui a reunião rápida do dia.
+A daily assíncrona substitui a reunião de início de semana. Ela acontece **só na segunda-feira**: nos outros dias o cartão não aparece.
 
-1. No cartão **Daily de hoje**, clique em **Responder (1 min)**.
-2. Preencha **O que fiz ontem**, **O que vou fazer hoje** e, se houver, **Bloqueios**.
-3. Salve. Para corrigir, use **Editar a minha**.
+1. Na segunda, no cartão **Daily de segunda**, clique em **Responder (1 min)**.
+2. Preencha **O que fiz na semana passada**, **O que vou fazer esta semana** e, se houver, **Bloqueios**. O campo da semana passada já vem com o que você planejou na daily anterior.
+3. Salve. Para corrigir (só na própria segunda), use **Editar a minha**.
 
 Se você escrever um bloqueio, o líder do seu time recebe um aviso. O cartão mostra também a daily dos colegas.
 

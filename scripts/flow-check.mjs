@@ -167,11 +167,19 @@ try {
   sql(`insert into team_members (team_id, member_id, is_lead) values (${teamId || 0}, ${memberId}, 0);`);
   sql(`update team_members set is_lead = 1 where team_id = ${teamId || 0} and member_id = ${adminId};`);
   const daily = await api("POST", "/api/standups", { action: "save", yesterday: "x", today: `${MARK} hoje`, blockers: "esperando acesso" }, memberToken);
-  check("daily: responder", daily.status === 200, `status ${daily.status} ${daily.data.error ?? ""}`);
-  const dailyView = await api("GET", "/api/standups");
-  check("daily: aparece para o time", dailyView.data.entries?.some((entry) => entry.memberId === memberId && entry.blockers === "esperando acesso"));
-  const blockerNotice = sql(`select count(*) n from notifications where member_id = ${adminId} and kind = 'standup_blocker';`)[0].results[0].n;
-  check("daily: bloqueio avisa o líder do time", blockerNotice === 1, `avisos ${blockerNotice}`);
+  // A daily é só na segunda-feira: nos outros dias, o servidor recusa e a tela não mostra o cartão.
+  const monday = new Date(`${today}T12:00:00Z`).getUTCDay() === 1;
+  if (!monday) {
+    check("daily: fora da segunda é recusada", daily.status === 400 && /segunda/.test(daily.data.error ?? ""), `status ${daily.status} ${daily.data.error ?? ""}`);
+    const dailyView = await api("GET", "/api/standups");
+    check("daily: fora da segunda não aparece", dailyView.data.isDailyDay === false, JSON.stringify(dailyView.data).slice(0, 120));
+  } else {
+    check("daily: responder", daily.status === 200, `status ${daily.status} ${daily.data.error ?? ""}`);
+    const dailyView = await api("GET", "/api/standups");
+    check("daily: aparece para o time", dailyView.data.entries?.some((entry) => entry.memberId === memberId && entry.blockers === "esperando acesso"));
+    const blockerNotice = sql(`select count(*) n from notifications where member_id = ${adminId} and kind = 'standup_blocker';`)[0].results[0].n;
+    check("daily: bloqueio avisa o líder do time", blockerNotice === 1, `avisos ${blockerNotice}`);
+  }
 } finally {
   try { cleanup(); } catch (error) { console.error("Limpeza falhou:", error.message); }
 }

@@ -15,6 +15,7 @@ Como registrar (para quem altera o Portal):
 
 ## 2026-11-27
 
+- **Daily**: agora é só na segunda-feira (**Daily de segunda**), com "o que fiz na semana passada" e "o que vou fazer esta semana". Nos outros dias o cartão não aparece ([Visão geral](02-visao-geral.md#daily-de-segunda)).
 - **Entrar no Portal**: por segurança, a senha é pedida de novo ao fechar todas as abas do Portal, fechar o navegador, desligar o computador ou depois de 12 horas sem usar ([Primeiros passos](01-primeiros-passos.md#entrar-no-portal)).
 - **Novidades do Portal**: a cada versão nova, aparece uma janela com o que mudou e toda a equipe recebe um aviso no sino ([Primeiros passos](01-primeiros-passos.md#novidades-do-portal)).
 - **Conectar uma IA (MCP)**: em **Meu perfil**, crie uma chave e conecte Claude, ChatGPT, Cursor ou outra IA para consultar e fazer coisas no Portal por você, com as suas permissões ([Primeiros passos](01-primeiros-passos.md#conectar-uma-ia-mcp)).
@@ -63,6 +64,6 @@ Como registrar (para quem altera o Portal):
 
 - Troca de semana na escala com aprovação ([Escala](10-escala.md#pedir-troca-de-semana)).
 - Pedido de ausência com aprovação do líder ([Pessoas e times](11-pessoas.md#férias-e-ausências)).
-- Daily assíncrona na Visão geral; bloqueios avisam o líder ([Visão geral](02-visao-geral.md#daily-de-hoje)).
+- Daily assíncrona na Visão geral; bloqueios avisam o líder ([Visão geral](02-visao-geral.md#daily-de-segunda)).
 - Carga do time por dia no Painel da liderança ([Painel](13-painel-da-lideranca.md#visão-geral)).
 - O Portal atualiza sozinho quando alguém da equipe muda algo.

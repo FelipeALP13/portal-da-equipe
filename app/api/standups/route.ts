@@ -1,10 +1,12 @@
-// Daily assíncrona: cada pessoa responde "ontem / hoje / bloqueios" uma vez por dia; o time vê tudo junto.
+// Daily assíncrona: só na segunda-feira, cada pessoa responde "semana passada / esta semana / bloqueios";
+// o time vê tudo junto. Nos outros dias não há daily (nem consulta ao banco).
 // Bloqueio novo avisa os líderes dos times da pessoa (ou os administradores, se não houver líder).
 import { and, desc, eq, inArray, lt, ne } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { members, notifications, standups, teamMembers } from "../../../db/schema";
 import { getSessionMember } from "../../auth-session";
 import { hasTrustedOrigin } from "../../request-security";
+import { isDailyDay, nextDailyDay } from "../../standup-rules";
 import { readJsonBody } from "../../api-input";
 
 type Db = ReturnType<typeof getDb>;
@@ -32,6 +34,7 @@ export async function GET() {
     const member = await getSessionMember(db);
     if (!member?.active) return json({ error: "Entre com seu usuário e senha para acessar o sistema." }, 401);
     const day = todayInSaoPaulo();
+    if (!isDailyDay(day)) return json({ day, isDailyDay: false, nextDay: nextDailyDay(day) });
     const entries = await db.select({ memberId: standups.memberId, yesterday: standups.yesterday, today: standups.today, blockers: standups.blockers, updatedAt: standups.updatedAt, name: members.name })
       .from(standups).innerJoin(members, eq(members.id, standups.memberId)).where(eq(standups.day, day)).orderBy(desc(standups.updatedAt));
     const team = await db.select({ id: members.id, name: members.name, role: members.role }).from(members).where(eq(members.active, true));
@@ -39,6 +42,7 @@ export async function GET() {
     const [previous] = await db.select({ today: standups.today, day: standups.day }).from(standups).where(and(eq(standups.memberId, member.id), lt(standups.day, day))).orderBy(desc(standups.day)).limit(1);
     return json({
       day,
+      isDailyDay: true,
       canWrite: member.role !== "viewer",
       mine: entries.find((entry) => entry.memberId === member.id) ?? null,
       previousPlan: previous?.today ?? "",
@@ -64,8 +68,9 @@ export async function POST(request: Request) {
     if (body instanceof Response) return body;
     if (body.action !== "save") return json({ error: "Ação desconhecida." }, 400);
     const entry = { yesterday: clean(body.yesterday), today: clean(body.today), blockers: clean(body.blockers) };
-    if (!entry.today) return json({ error: "Conte o que você vai fazer hoje." }, 400);
+    if (!entry.today) return json({ error: "Conte o que você vai fazer esta semana." }, 400);
     const day = todayInSaoPaulo();
+    if (!isDailyDay(day)) return json({ error: "A daily é só na segunda-feira." }, 400);
     const now = new Date().toISOString();
     const [before] = await db.select({ blockers: standups.blockers }).from(standups).where(and(eq(standups.memberId, member.id), eq(standups.day, day))).limit(1);
     await db.insert(standups).values({ memberId: member.id, day, ...entry, createdAt: now, updatedAt: now })
