@@ -15,6 +15,8 @@ Como registrar (para quem altera o Portal):
 
 ## 2026-11-27
 
+- **Conectar uma IA (MCP)**: em **Meu perfil**, crie uma chave e conecte Claude, ChatGPT, Cursor ou outra IA para consultar e fazer coisas no Portal por você, com as suas permissões ([Primeiros passos](01-primeiros-passos.md#conectar-uma-ia-mcp)).
+- **Atualização automática**: as telas atualizam só quando muda o que elas mostram e param de consultar depois de 10 minutos sem uso (voltam no primeiro movimento).
 - **Reportar problema**: novo lugar para relatar erros e sugestões do Portal, com print e a tela onde aconteceu. Você acompanha a situação e recebe a resposta no sino ([Primeiros passos](01-primeiros-passos.md#reportar-um-problema-no-portal)).
 - **Demandas**: a gaveta da demanda ficou mais larga e as propriedades aparecem em linhas (nome à esquerda, valor à direita), mais fáceis de ler ([Demandas](04-demandas.md)).
 - **Sino de avisos**: os prazos de demandas deixam de contar no número depois que você abre o sino no dia ([Primeiros passos](01-primeiros-passos.md#sino-de-avisos)).

@@ -53,6 +53,19 @@ Clique no seu nome no menu lateral (ou busque "Meu perfil" com **Ctrl+K**). Ali 
 
 Em **Meu perfil → Aparência**, escolha **Claro**, **Escuro** ou **Automático** (segue o modo do computador ou do celular). A escolha vale para o navegador em que você está.
 
+## Conectar uma IA (MCP)
+
+Você pode conectar uma IA (Claude, ChatGPT, Cursor ou outra que aceite MCP) ao Portal e pedir em português: "quais demandas minhas vencem esta semana?", "abre um chamado para o Desenvolvimento sobre...", "comenta na DEM-120 que...". A IA age **como você**: só vê e faz o que você já pode fazer no Portal, e tudo passa pelas mesmas regras e avisos.
+
+1. Abra **Meu perfil** e desça até **Conectar uma IA (MCP)**.
+2. Dê um nome à chave (ex.: "Claude no notebook") e clique em **Criar chave**.
+3. **Copie a chave na hora**: ela aparece uma vez só. Não compartilhe: quem tiver a chave age como você.
+4. Em **Como conectar**, copie o comando (Claude Code) ou a configuração (Claude Desktop, Cursor e outros) e cole na sua IA.
+
+O que a IA consegue fazer: ver, criar, comentar e mudar demandas; ver, abrir, comentar e mudar chamados; ver e anotar na agenda; ver os avisos do sino; ver o estoque da Copa do seu time e registrar compra, abertura ou consumo; reportar um problema no Portal. Peça para ela confirmar com você antes de alterar algo.
+
+Cada chave vale por um ano. Na lista aparece quando ela foi usada pela última vez; **Revogar** corta o acesso na hora. Ao criar uma chave, você recebe um aviso no sino: se não foi você, revogue.
+
 ## Aparelhos conectados
 
 Em **Meu perfil → Aparelhos conectados** aparece cada computador ou celular em que você está logado. Esqueceu o Portal aberto em outro computador? Encerre a sessão dele ali, ou use **Sair de todos**.
@@ -151,6 +164,7 @@ Se você abrir um endereço que não existe, o Portal mostra **Página não enco
 | Entrar, mudar a própria senha, foto, tema e avisos | Sim | Sim | Sim |
 | Ler a Ajuda | Sim | Sim | Sim |
 | Reportar problema e acompanhar os próprios relatos | Sim | Sim | Sim |
+| Conectar uma IA (MCP) com chave pessoal (a IA tem as mesmas permissões da pessoa) | Sim | Sim | Sim |
 | Ver todos os relatos, mudar a situação e responder | Sim | Não | Não |
 | Ligar e desligar a própria verificação em duas etapas | Sim | Sim | Sim |
 | Usar o botão "+ Criar" | Sim | Sim | Não |

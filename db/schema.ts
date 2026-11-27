@@ -526,7 +526,7 @@ export const notifications = sqliteTable("notifications", {
   memberId: integer("member_id")
     .notNull()
     .references(() => members.id, { onDelete: "cascade" }),
-  kind: text("kind", { enum: ["task_assigned", "task_comment", "task_mention", "task_status", "ticket_new", "ticket_assigned", "ticket_comment", "ticket_mention", "ticket_status", "ticket_late", "agenda_reminder", "agenda_invite", "ticket_rate", "task_unblocked", "handoff", "celebration", "system_down", "system_up", "onboarding", "review_open", "review_reminder", "goal_update", "one_on_one", "dev_action", "pulse_open", "announcement", "incident", "asset_expiring", "chat_mention", "chat_message", "chat_reminder", "stock_low", "copa_request", "portal_report", "kudos", "poll", "maintenance", "security_alert", "absence_request", "absence_decision", "shift_swap", "standup_blocker"] }).notNull(),
+  kind: text("kind", { enum: ["task_assigned", "task_comment", "task_mention", "task_status", "ticket_new", "ticket_assigned", "ticket_comment", "ticket_mention", "ticket_status", "ticket_late", "agenda_reminder", "agenda_invite", "ticket_rate", "task_unblocked", "handoff", "celebration", "system_down", "system_up", "onboarding", "review_open", "review_reminder", "goal_update", "one_on_one", "dev_action", "pulse_open", "announcement", "incident", "asset_expiring", "chat_mention", "chat_message", "chat_reminder", "stock_low", "copa_request", "portal_report", "api_token", "kudos", "poll", "maintenance", "security_alert", "absence_request", "absence_decision", "shift_swap", "standup_blocker"] }).notNull(),
   taskId: integer("task_id").references(() => tasks.id, { onDelete: "cascade" }),
   ticketId: integer("ticket_id").references(() => tickets.id, { onDelete: "cascade" }),
   eventId: integer("event_id").references(() => agendaEvents.id, { onDelete: "cascade" }),
@@ -1210,3 +1210,16 @@ export const portalReports = sqliteTable("portal_reports", {
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 }, (table) => [index("portal_reports_status_idx").on(table.status, table.createdAt)]);
+
+/** Chaves pessoais para conectar uma IA pelo MCP (/api/mcp). Só o resumo (hash) fica guardado; a chave aparece uma vez. */
+export const apiTokens = sqliteTable("api_tokens", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  memberId: integer("member_id").notNull().references(() => members.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  /** Últimos 4 caracteres, para a pessoa reconhecer a chave na lista. */
+  hint: text("hint").notNull(),
+  createdAt: text("created_at").notNull(),
+  expiresAt: text("expires_at").notNull(),
+  lastUsedAt: text("last_used_at"),
+}, (table) => [index("api_tokens_member_idx").on(table.memberId)]);

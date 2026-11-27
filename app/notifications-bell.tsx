@@ -5,6 +5,7 @@ import { useLiveRefresh, isActive } from "./live";
 import { createPortal } from "react-dom";
 import AtSign from "lucide-react/icons/at-sign";
 import Bug from "lucide-react/icons/bug";
+import KeyRound from "lucide-react/icons/key-round";
 import Bell from "lucide-react/icons/bell";
 import CalendarDays from "lucide-react/icons/calendar";
 import CalendarClock from "lucide-react/icons/calendar-clock";
@@ -78,7 +79,7 @@ const FILTERS: { value: Filter; label: string; match: (item: Item) => boolean }[
 const FILTER_EMPTY: Record<Filter, string> = { all: "", unread: "Tudo lido por aqui.", mentions: "Ninguém te mencionou nos últimos avisos.", work: "Nenhum aviso de demanda ou chamado.", chat: "Nenhum aviso do chat." };
 
 
-const kindIcon = { task_assigned: UserPlus, task_comment: MessageSquare, task_mention: AtSign, task_status: CircleDot, ticket_new: LifeBuoy, ticket_assigned: UserPlus, ticket_comment: MessageSquare, ticket_mention: AtSign, ticket_status: CircleDot, ticket_late: AlarmClock, agenda_reminder: CalendarClock, agenda_invite: CalendarPlus, ticket_rate: Star, task_unblocked: Unlock, handoff: Repeat, celebration: PartyPopper, system_down: ServerCrash, system_up: ServerCog, onboarding: Sprout, review_open: ClipboardCheck, review_reminder: ClipboardCheck, goal_update: Target, one_on_one: Handshake, dev_action: Handshake, pulse_open: Smile, announcement: Megaphone, incident: Siren, asset_expiring: Laptop, chat_mention: MessagesSquare, chat_message: MessageSquare, chat_reminder: AlarmClock, stock_low: PackageMinus, copa_request: HandPlatter, portal_report: Bug, kudos: Award, poll: Vote, maintenance: Wrench, security_alert: ShieldAlert, absence_request: CalendarOff, absence_decision: CalendarOff, shift_swap: ArrowLeftRight, standup_blocker: OctagonAlert } as const;
+const kindIcon = { task_assigned: UserPlus, task_comment: MessageSquare, task_mention: AtSign, task_status: CircleDot, ticket_new: LifeBuoy, ticket_assigned: UserPlus, ticket_comment: MessageSquare, ticket_mention: AtSign, ticket_status: CircleDot, ticket_late: AlarmClock, agenda_reminder: CalendarClock, agenda_invite: CalendarPlus, ticket_rate: Star, task_unblocked: Unlock, handoff: Repeat, celebration: PartyPopper, system_down: ServerCrash, system_up: ServerCog, onboarding: Sprout, review_open: ClipboardCheck, review_reminder: ClipboardCheck, goal_update: Target, one_on_one: Handshake, dev_action: Handshake, pulse_open: Smile, announcement: Megaphone, incident: Siren, asset_expiring: Laptop, chat_mention: MessagesSquare, chat_message: MessageSquare, chat_reminder: AlarmClock, stock_low: PackageMinus, copa_request: HandPlatter, portal_report: Bug, api_token: KeyRound, kudos: Award, poll: Vote, maintenance: Wrench, security_alert: ShieldAlert, absence_request: CalendarOff, absence_decision: CalendarOff, shift_swap: ArrowLeftRight, standup_blocker: OctagonAlert } as const;
 
 function subject(item: Item) {
   if (item.ticketId) return `${ticketCode(item.ticketId)} · ${item.ticketTitle ?? "Chamado"}`;
@@ -100,6 +101,7 @@ function subject(item: Item) {
   if (item.kind === "stock_low") return "Estoque da Copa";
   if (item.kind === "copa_request") return "Pedidos da Copa";
   if (item.kind === "portal_report") return "Problemas do Portal";
+  if (item.kind === "api_token") return "Conexão de IA (MCP)";
   if (item.kind === "kudos") return "Elogios";
   if (item.kind === "poll") return "Enquete";
   if (item.kind === "maintenance") return "Manutenção do escritório";

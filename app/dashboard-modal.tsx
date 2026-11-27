@@ -4,6 +4,7 @@ import { askConfirm } from "./confirm-dialog";
 
 import LockKeyhole from "lucide-react/icons/lock-keyhole";
 import ThemePicker from "./theme-picker";
+import McpAccess from "./mcp-access";
 import { useEffect, useMemo, useState } from "react";
 import { passwordPolicyError } from "./auth-policy";
 import { marketCategories, marketUnits } from "./inventory-standards";
@@ -258,6 +259,7 @@ export function Modal({ state, items, schedule, currentUser, saving, onClose, on
           <div className="tour-again full"><div><strong>Tour do Portal</strong><small>Mostra de novo onde fica cada coisa: menu, demandas, chamados, busca, chat e avisos.</small></div><button type="button" className="secondary-button" onClick={() => { onClose(); window.setTimeout(() => window.dispatchEvent(new Event(OPEN_TOUR_EVENT)), 250); }}>Ver o tour</button></div>
           <TwoFactorPanel />
           <SessionsPanel />
+          <McpAccess />
           <div className="profile-role full"><span>Seu nível de acesso</span><strong>{roleLabel(memberRole)}</strong></div>
         </> : state.kind === "member" ? memberTab === "general" ? <>
           <VisualEditor label="Avatar do usuário" icons={personIcons} mode={avatarMode} setMode={setAvatarMode} icon={avatarIcon} setIcon={setAvatarIcon} imageKey={avatarKey} file={avatarFile} setFile={setAvatarFile} />

@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { and, eq, gt, lt, ne } from "drizzle-orm";
 import { cookies, headers } from "next/headers";
 import { getDb } from "../db";
@@ -55,7 +56,16 @@ export async function verifyPassword(password: string, expectedHash: string, sal
   return difference === 0;
 }
 
+/**
+ * Pessoa que está agindo por uma chave pessoal (IA conectada pelo MCP, /api/mcp). Dentro de
+ * actingMember.run(pessoa, ...), as rotas do Portal enxergam essa pessoa como logada, com as
+ * permissões dela, sem sessão de navegador.
+ */
+export const actingMember = new AsyncLocalStorage<SessionMember>();
+
 export async function getSessionMember(db = getDb()): Promise<SessionMember | null> {
+  const acting = actingMember.getStore();
+  if (acting) return acting;
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const tokenHash = await hashToken(token);
