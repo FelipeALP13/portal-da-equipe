@@ -3,8 +3,11 @@
 const DAY = 86400000;
 /** Cada uso empurra o vencimento para daqui a 30 dias... */
 export const SESSION_DAYS = 30;
-/** ...mas sem uso por 7 dias a sessão cai (computador esquecido logado). */
-export const IDLE_DAYS = 7;
+/**
+ * ...mas sem uso por 12 horas a sessão cai: quem fechou o Portal e foi embora entra de novo com a senha
+ * no dia seguinte (mesmo se o navegador reabrir as abas e o cookie da sessão).
+ */
+export const IDLE_MS = 12 * 3600000;
 /** ...e nenhuma sessão passa de 90 dias: depois disso, entrar de novo com a senha. */
 export const MAX_DAYS = 90;
 /** Para não gravar no banco a cada clique: renova no máximo a cada 15 minutos. */
@@ -31,7 +34,7 @@ export function checkSession(session: SessionTimes, now: number): { valid: false
   const expires = parseStamp(session.expiresAt);
   const lastSeen = parseStamp(session.lastSeenAt ?? session.createdAt);
   if (!(expires > now)) return { valid: false };
-  if (Number.isFinite(lastSeen) && now - lastSeen > IDLE_DAYS * DAY) return { valid: false };
+  if (Number.isFinite(lastSeen) && now - lastSeen > IDLE_MS) return { valid: false };
   if (Number.isFinite(created) && now - created > MAX_DAYS * DAY) return { valid: false };
   if (Number.isFinite(lastSeen) && now - lastSeen < TOUCH_EVERY_MS) return { valid: true, renew: false };
   const cap = Number.isFinite(created) ? created + MAX_DAYS * DAY : Infinity;

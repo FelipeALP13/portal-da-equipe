@@ -15,6 +15,7 @@ Como registrar (para quem altera o Portal):
 
 ## 2026-11-27
 
+- **Entrar no Portal**: por segurança, a senha é pedida de novo ao fechar todas as abas do Portal, fechar o navegador, desligar o computador ou depois de 12 horas sem usar ([Primeiros passos](01-primeiros-passos.md#entrar-no-portal)).
 - **Novidades do Portal**: a cada versão nova, aparece uma janela com o que mudou e toda a equipe recebe um aviso no sino ([Primeiros passos](01-primeiros-passos.md#novidades-do-portal)).
 - **Conectar uma IA (MCP)**: em **Meu perfil**, crie uma chave e conecte Claude, ChatGPT, Cursor ou outra IA para consultar e fazer coisas no Portal por você, com as suas permissões ([Primeiros passos](01-primeiros-passos.md#conectar-uma-ia-mcp)).
 - **Atualização automática**: as telas atualizam só quando muda o que elas mostram e param de consultar depois de 10 minutos sem uso (voltam no primeiro movimento).

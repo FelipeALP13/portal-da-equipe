@@ -14,7 +14,13 @@ Se a sua conta tiver a verificação em duas etapas ligada, o Portal pede em seg
 
 **Esqueceu a senha ou perdeu o celular?** Não existe "esqueci a senha" por e-mail. Peça para um administrador redefinir a sua senha (ou desligar a verificação em duas etapas) em **Usuários**.
 
-Você sai sozinho depois de **7 dias sem usar** o Portal naquele aparelho. Enquanto você usa, a sessão se renova.
+Por segurança, o Portal pede a senha de novo quando você:
+
+- fecha todas as abas do Portal e abre de novo;
+- fecha o navegador ou desliga o computador;
+- fica **12 horas sem usar** (por exemplo, de um dia para o outro).
+
+Recarregar a página (**F5**) ou abrir o Portal numa segunda aba, com a primeira ainda aberta, não pede a senha.
 
 ### Primeiro acesso de todos (instalação)
 

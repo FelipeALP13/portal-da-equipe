@@ -4,7 +4,7 @@ import { cookies, headers } from "next/headers";
 import { getDb } from "../db";
 import { authRateLimits, members, sessions } from "../db/schema";
 import { normalizeUsername } from "./auth-policy";
-import { checkSession, deviceLabel, IDLE_DAYS, newSessionExpiry } from "./session-policy";
+import { checkSession, deviceLabel, IDLE_MS, newSessionExpiry } from "./session-policy";
 
 export { normalizeUsername, passwordPolicyError, validatePassword } from "./auth-policy";
 
@@ -90,7 +90,7 @@ export async function getSessionMember(db = getDb()): Promise<SessionMember | nu
     if (!device) { try { device = deviceLabel((await headers()).get("user-agent")); } catch { /* sem cabeçalhos */ } }
     await db.update(sessions).set({ lastSeenAt: now, expiresAt: state.expiresAt, device }).where(eq(sessions.id, row.session.id));
     try {
-      (await cookies()).set(SESSION_COOKIE, token, cookieOptions(new Date(state.expiresAt)));
+      (await cookies()).set(SESSION_COOKIE, token, cookieOptions());
     } catch {
       // Páginas (não APIs) não podem gravar cookie: o banco já foi renovado e a próxima API atualiza o cookie.
     }
@@ -98,8 +98,12 @@ export async function getSessionMember(db = getDb()): Promise<SessionMember | nu
   return row.member;
 }
 
-function cookieOptions(expires: Date) {
-  return { httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", expires };
+/**
+ * Cookie de sessão (sem data de validade): o navegador apaga ao fechar, então quem fecha o navegador ou
+ * desliga o computador entra de novo com a senha. A validade de verdade fica no banco (sessions.expiresAt).
+ */
+function cookieOptions() {
+  return { httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/" };
 }
 
 /** Id da sessão deste navegador (para marcar "este aparelho" e encerrar as outras). */
@@ -138,7 +142,7 @@ export async function createSession(memberId: number, db = getDb()) {
   let device = "";
   try { device = deviceLabel((await headers()).get("user-agent")); } catch { /* sem cabeçalhos: fica sem nome */ }
   await db.insert(sessions).values({ memberId, tokenHash, expiresAt, lastSeenAt: new Date().toISOString(), device });
-  (await cookies()).set(SESSION_COOKIE, token, cookieOptions(new Date(expiresAt)));
+  (await cookies()).set(SESSION_COOKIE, token, cookieOptions());
 }
 
 export async function destroySession(db = getDb()) {
@@ -153,8 +157,8 @@ export async function cleanupAuthData(db = getDb()) {
   const staleRateLimit = new Date(Date.now() - 2 * 86400000).toISOString();
   await db.batch([
     db.delete(sessions).where(lt(sessions.expiresAt, now)),
-    // Paradas há mais de 7 dias também não valem mais.
-    db.delete(sessions).where(lt(sessions.lastSeenAt, new Date(Date.now() - IDLE_DAYS * 86400000).toISOString())),
+    // Paradas há mais de 12 horas também não valem mais.
+    db.delete(sessions).where(lt(sessions.lastSeenAt, new Date(Date.now() - IDLE_MS).toISOString())),
     db.delete(authRateLimits).where(lt(authRateLimits.updatedAt, staleRateLimit)),
   ]);
 }

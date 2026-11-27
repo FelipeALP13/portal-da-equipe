@@ -35,6 +35,7 @@ import AdminView from "./admin-view";
 import HelpView from "./help-view";
 import PortalReportsView from "./portal-reports-view";
 import NewsDialog from "./news-dialog";
+import { useTabSession } from "./tab-session";
 import Bug from "lucide-react/icons/bug";
 import CircleHelp from "lucide-react/icons/circle-help";
 import CalendarView from "./calendar-view";
@@ -380,6 +381,10 @@ export default function Home() {
     router.push("/");
     router.refresh();
   }
+  // Fechou o Portal (nenhuma aba aberta) e voltou: sai e pede a senha de novo.
+  useTabSession(Boolean(currentUser?.active), useCallback(() => {
+    void fetch("/api/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "logout" }) }).finally(() => { router.replace("/"); router.refresh(); });
+  }, [router]));
 
   // Ações rápidas da busca (Ctrl+K): criar algo ou ir para uma tela sem passar pelo menu.
   const canWrite = Boolean(currentUser?.active && currentUser.role !== "viewer");

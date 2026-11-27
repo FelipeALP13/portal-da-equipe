@@ -11,7 +11,7 @@ Não há recuperação por e-mail. Peça para um administrador redefinir a sua s
 Use um dos **códigos de recuperação** no lugar do código do aplicativo. Se não tiver os códigos, peça a um administrador para **desligar a verificação em duas etapas** da sua conta e ligue de novo com o celular novo.
 
 **Fui desconectado sozinho. Por quê?**
-A sessão cai depois de 7 dias sem usar o Portal naquele aparelho (e dura no máximo 90 dias). Também pode ser que você ou um administrador tenha usado **Sair de todos** ou **Desconectar de todos os aparelhos**.
+O Portal pede a senha de novo quando você fecha todas as abas dele, fecha o navegador, desliga o computador ou fica 12 horas sem usar. Também pode ser que você ou um administrador tenha usado **Sair de todos** ou **Desconectar de todos os aparelhos**.
 
 **Esqueci o Portal aberto num computador que não é meu.**
 Em **Meu perfil → Aparelhos conectados**, encerre aquele aparelho ou clique em **Sair de todos**.

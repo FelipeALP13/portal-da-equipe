@@ -9,6 +9,7 @@ import UsersRound from "lucide-react/icons/users-round";
 import Check from "lucide-react/icons/check";
 import { useRouter } from "next/navigation";
 import { BrandLogo, useBrand } from "./brand-context";
+import { markTabSignedIn } from "./tab-session";
 import { BrandStroke } from "./brand-stroke";
 
 export default function LoginScreen() {
@@ -63,6 +64,7 @@ export default function LoginScreen() {
         setLoading(false);
         return;
       }
+      markTabSignedIn();
       router.push("/painel");
       router.refresh();
     } catch (reason) {

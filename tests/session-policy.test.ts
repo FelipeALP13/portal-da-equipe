@@ -11,7 +11,7 @@ test("data do SQLite sem fuso é UTC", () => {
 });
 
 test("sessão em uso é renovada por mais 30 dias", () => {
-  const session = { createdAt: "2026-11-01 10:00:00", expiresAt: "2026-12-01T10:00:00.000Z", lastSeenAt: "2026-11-10T10:00:00.000Z" };
+  const session = { createdAt: "2026-11-01 10:00:00", expiresAt: "2026-12-01T10:00:00.000Z", lastSeenAt: "2026-11-12T08:00:00.000Z" };
   const result = checkSession(session, at("2026-11-12T10:00:00Z"));
   assert.deepEqual(result, { valid: true, renew: true, expiresAt: "2026-12-12T10:00:00.000Z" });
 });
@@ -21,9 +21,10 @@ test("usada há pouco: vale sem gravar de novo", () => {
   assert.deepEqual(checkSession(session, at("2026-11-12T10:00:00Z")), { valid: true, renew: false });
 });
 
-test("sem uso por mais de 7 dias, cai", () => {
-  const session = { createdAt: "2026-11-01 10:00:00", expiresAt: "2026-12-01T10:00:00.000Z", lastSeenAt: "2026-11-02T10:00:00.000Z" };
-  assert.deepEqual(checkSession(session, at("2026-11-09T10:01:00Z")), { valid: false });
+test("sem uso por mais de 12 horas, cai (fechou o Portal e foi embora: no dia seguinte entra de novo)", () => {
+  const session = { createdAt: "2026-11-01 10:00:00", expiresAt: "2026-12-01T10:00:00.000Z", lastSeenAt: "2026-11-02T18:00:00.000Z" };
+  assert.deepEqual(checkSession(session, at("2026-11-03T06:01:00Z")), { valid: false });
+  assert.equal(checkSession(session, at("2026-11-03T05:59:00Z")).valid, true, "11h59 sem uso ainda vale");
   // Sessões antigas (sem registro de uso) contam a partir da criação.
   assert.deepEqual(checkSession({ ...session, lastSeenAt: null }, at("2026-11-09T10:01:00Z")), { valid: false });
 });
