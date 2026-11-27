@@ -123,6 +123,15 @@ O sino mostra os avisos para você: demandas e chamados (atribuições, comentá
 - As demandas que vencem hoje, amanhã ou já venceram aparecem no topo da lista e contam no número do sino até você abrir o sino naquele dia. Depois continuam na lista, mas não contam mais; no dia seguinte voltam a contar.
 - **Receber avisos também com o Portal minimizado** liga o aviso do sistema operacional enquanto o Portal está aberto em segundo plano.
 
+### Novidades do Portal
+
+Quando sai uma versão nova com mudanças, todo mundo fica sabendo:
+
+- Ao abrir o Portal, aparece a janela **Novidades do Portal** com o que mudou desde a sua última visita. Clique em **Entendi** para fechar (ela não aparece de novo para as mesmas novidades) ou em **Ver todas na Ajuda** para ler o histórico completo.
+- Toda a equipe recebe também um aviso no sino (e no celular, para quem ligou os avisos). Clicar no aviso abre a janela de novidades de novo.
+
+O histórico completo fica em **Ajuda → Novidades**.
+
 ### Reportar um problema no Portal
 
 Achou um erro ou tem uma ideia para o Portal? Conte por aqui, em vez de mandar no chat: fica registrado e você acompanha.

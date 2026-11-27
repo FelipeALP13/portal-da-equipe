@@ -6,6 +6,7 @@ import { hasTrustedOrigin } from "../../request-security";
 import { addDays } from "../../support-schedule";
 import { readJsonBody } from "../../api-input";
 import { flushPush } from "../../web-push";
+import { announceNews } from "../../news-announce";
 
 function json(body: unknown, status = 200) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -22,6 +23,8 @@ export async function GET(request: Request) {
     const db = getDb();
     const member = await getSessionMember(db);
     if (!member?.active) return json({ error: "Entre com seu usuário e senha para acessar o sistema." }, 401);
+    // Versão nova com novidades: avisa toda a equipe no sino (uma vez por versão).
+    await announceNews(db).catch((error) => console.error("news announce failed", error));
     // Quem está com o Portal aberto "puxa" o envio dos avisos novos para o celular de toda a equipe.
     await flushPush(db, new URL(request.url).origin).catch((error) => console.error("push flush failed", error));
 

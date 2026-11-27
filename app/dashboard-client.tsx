@@ -34,6 +34,7 @@ import KnowledgeView, { type ArticleDraft } from "./knowledge-view";
 import AdminView from "./admin-view";
 import HelpView from "./help-view";
 import PortalReportsView from "./portal-reports-view";
+import NewsDialog from "./news-dialog";
 import Bug from "lucide-react/icons/bug";
 import CircleHelp from "lucide-react/icons/circle-help";
 import CalendarView from "./calendar-view";
@@ -151,7 +152,10 @@ export default function Home() {
     go("portalReports");
     if (create) requestCreate("report");
   }
-  function openView(view: typeof tab | "one_on_ones" | "pulse" | "incidents" | "assets" | "absences" | "chat") {
+  // Novidades do Portal: abre pelo aviso do sino (a janela também abre sozinha para quem não viu).
+  const [newsRequest, setNewsRequest] = useState(0);
+  function openView(view: typeof tab | "one_on_ones" | "pulse" | "incidents" | "assets" | "absences" | "chat" | "news") {
+    if (view === "news") { setNewsRequest((value) => value + 1); return; }
     if (view === "chat") {
       go("community");
       setCommunityTab((current) => ({ key: current.key + 1, channel: null }));
@@ -562,6 +566,7 @@ export default function Home() {
 
       {mobileMenu && <button className="backdrop menu-backdrop" onClick={() => setMobileMenu(false)} aria-label="Fechar menu" />}
       {currentUser?.active && <ProductTour memberId={currentUser.userId} firstName={currentUser.name.split(/\s+/)[0]} blocked={myDayOpen || modal !== null} />}
+      <NewsDialog userId={currentUser?.active ? currentUser.userId : null} request={newsRequest} onOpenHelp={() => go("help")} />
       {myDayOpen && currentUser && <MyDay name={currentUser.name} agenda={upcomingAgenda} onClose={() => setMyDayOpen(false)} onOpenTask={openTask} onOpenTicket={openTicket} onOpenAgenda={openAgenda} />}
       {trip && <ShoppingTrip lines={shopping} items={items} onClose={() => setTrip(false)} onDone={(count) => { setTrip(false); void load(); setNotice(`${count} ${count === 1 ? "compra registrada" : "compras registradas"}.`); window.setTimeout(() => setNotice(""), 3200); }} />}
       {modal && <Modal state={modal} items={items} schedule={schedule} currentUser={currentUser} saving={saving} onClose={() => { setModal(null); setError(""); }} onSubmit={submit} />}
